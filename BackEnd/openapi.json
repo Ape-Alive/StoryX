@@ -1,0 +1,5031 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "StoryX API",
+    "version": "1.0.0",
+    "description": "StoryX Backend API - AI-powered animation video generation platform",
+    "contact": {
+      "name": "StoryX Team"
+    },
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Error message"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Success message"
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "sourceText": {
+            "type": "string"
+          },
+          "configLLM": {
+            "type": "string"
+          },
+          "configVideoAI": {
+            "type": "string"
+          },
+          "configTTS": {
+            "type": "string"
+          },
+          "configImageGen": {
+            "type": "string"
+          },
+          "storageLocation": {
+            "type": "string",
+            "enum": [
+              "local",
+              "remote"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "reviewing",
+              "generating",
+              "rendering",
+              "completed",
+              "failed"
+            ]
+          },
+          "progress": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AIModel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "llm",
+              "video",
+              "image",
+              "tts"
+            ]
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Character": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "项目ID，如果为null则表示是全局角色（所有项目共享）"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "age": {
+            "type": "string",
+            "nullable": true,
+            "description": "角色年龄，可能是\"25岁\"这样的描述"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "personality": {
+            "type": "string",
+            "description": "JSON array string"
+          },
+          "appearance": {
+            "type": "string"
+          },
+          "style": {
+            "type": "string"
+          },
+          "voiceActor": {
+            "type": "string",
+            "nullable": true,
+            "description": "发音人"
+          },
+          "voiceTone": {
+            "type": "string",
+            "nullable": true,
+            "description": "音色"
+          },
+          "voiceSample": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "description": "音色示例（URL）"
+          },
+          "clothingStyle": {
+            "type": "string",
+            "nullable": true,
+            "description": "服饰风格"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "角色图片URL"
+          },
+          "videoUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "角色视频URL（从抽卡任务生成）"
+          },
+          "modelUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "cached": {
+            "type": "boolean"
+          },
+          "usageCount": {
+            "type": "integer"
+          },
+          "project": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "description": "关联的项目信息（如果角色属于项目）"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "Novel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "userId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string",
+          "nullable": true
+        },
+        "summary": {
+          "type": "string",
+          "nullable": true
+        },
+        "coverUrl": {
+          "type": "string",
+          "nullable": true
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "filePath": {
+          "type": "string"
+        },
+        "fileSize": {
+          "type": "integer"
+        },
+        "encoding": {
+          "type": "string",
+          "nullable": true
+        },
+        "totalChapters": {
+          "type": "integer"
+        },
+        "totalWords": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string"
+        },
+        "chapterList": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "chapterId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "chapterTitle": {
+                "type": "string"
+              },
+              "order": {
+                "type": "integer"
+              },
+              "wordCount": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "Chapter": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "novelId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string",
+          "nullable": true
+        },
+        "contentPath": {
+          "type": "string",
+          "nullable": true
+        },
+        "order": {
+          "type": "integer"
+        },
+        "wordCount": {
+          "type": "integer"
+        },
+        "novel": {
+          "type": "object",
+          "nullable": true,
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string"
+            }
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "Act": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "scriptTaskId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "关联的剧本生成任务ID"
+        },
+        "novelId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "userId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "actName": {
+          "type": "string",
+          "description": "剧幕名称，如 \"第一幕\""
+        },
+        "content": {
+          "type": "string",
+          "nullable": true,
+          "description": "剧幕内容描述"
+        },
+        "highlight": {
+          "type": "string",
+          "nullable": true,
+          "description": "爽点描述"
+        },
+        "emotionalCurve": {
+          "type": "string",
+          "nullable": true,
+          "description": "情感曲线描述"
+        },
+        "rhythm": {
+          "type": "string",
+          "nullable": true,
+          "description": "节奏描述"
+        },
+        "chapterIds": {
+          "type": "string",
+          "nullable": true,
+          "description": "JSON数组，存储关联的章节ID列表"
+        },
+        "order": {
+          "type": "integer",
+          "description": "剧幕顺序（在任务内的顺序）"
+        },
+        "startChapterOrder": {
+          "type": "integer",
+          "nullable": true,
+          "description": "起始章节顺序号（用于按章节顺序排序，取关联章节中的最小order值）"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "Scene": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "actId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "关联的剧幕ID"
+        },
+        "novelId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "userId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "address": {
+          "type": "string",
+          "description": "场景地址/地点"
+        },
+        "sceneDescription": {
+          "type": "string",
+          "nullable": true,
+          "description": "场景描述"
+        },
+        "sceneImage": {
+          "type": "string",
+          "format": "uri",
+          "nullable": true,
+          "description": "场景图片URL"
+        },
+        "shotIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "nullable": true,
+          "description": "关联的镜头ID列表"
+        },
+        "order": {
+          "type": "integer",
+          "description": "场景顺序"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/ai-models/config-options": {
+      "get": {
+        "summary": "获取项目配置选项",
+        "description": "获取用于项目创建的AI模型配置选项，按类型分组（LLM、视频、图片、TTS）",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "成功返回配置选项",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "llm": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            },
+                            "video": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            },
+                            "image": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            },
+                            "tts": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ai-models/providers": {
+      "get": {
+        "summary": "获取所有AI提供商",
+        "description": "获取所有活跃的AI服务提供商列表",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "成功返回提供商列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "website": {
+                                "type": "string"
+                              },
+                              "logoUrl": {
+                                "type": "string"
+                              },
+                              "isActive": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "创建新提供商",
+        "description": "创建一个新的AI服务提供商",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "displayName"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "提供商名称（唯一标识）"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "description": "显示名称"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "提供商描述"
+                  },
+                  "website": {
+                    "type": "string",
+                    "description": "官网链接"
+                  },
+                  "logoUrl": {
+                    "type": "string",
+                    "description": "Logo链接"
+                  },
+                  "isActive": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "提供商创建成功"
+          },
+          "400": {
+            "description": "请求参数错误"
+          }
+        }
+      }
+    },
+    "/api/ai-models/providers/all": {
+      "get": {
+        "summary": "获取所有提供商（包括未启用的）",
+        "description": "获取所有AI服务提供商列表，包括未启用的",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回提供商列表"
+          }
+        }
+      }
+    },
+    "/api/ai-models/providers/{id}": {
+      "get": {
+        "summary": "获取提供商详情",
+        "description": "根据提供商ID获取详细信息",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回提供商详情"
+          },
+          "404": {
+            "description": "提供商不存在"
+          }
+        }
+      },
+      "put": {
+        "summary": "更新提供商",
+        "description": "更新提供商信息",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  },
+                  "logoUrl": {
+                    "type": "string"
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "提供商更新成功"
+          },
+          "404": {
+            "description": "提供商不存在"
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除提供商",
+        "description": "删除提供商（如果有关联的模型，将无法删除）",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "提供商删除成功"
+          },
+          "400": {
+            "description": "提供商下还有模型，无法删除"
+          },
+          "404": {
+            "description": "提供商不存在"
+          }
+        }
+      }
+    },
+    "/api/ai-models/grouped": {
+      "get": {
+        "summary": "获取按类型分组的模型",
+        "description": "获取所有AI模型，按类型（LLM、视频、图片、TTS）分组",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "成功返回分组模型",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "llm": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            },
+                            "video": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            },
+                            "image": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            },
+                            "tts": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ai-models/type/{type}": {
+      "get": {
+        "summary": "按类型获取模型",
+        "description": "根据类型获取AI模型列表（llm、video、image、tts）",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "llm",
+                "video",
+                "image",
+                "tts"
+              ]
+            },
+            "description": "模型类型"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回模型列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AIModel"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "无效的模型类型",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ai-models/{id}": {
+      "get": {
+        "summary": "获取模型详情",
+        "description": "根据模型ID获取AI模型的详细信息",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "模型ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回模型详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AIModel"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "模型不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "更新模型",
+        "description": "更新模型信息",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "providerId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "llm",
+                      "video",
+                      "image",
+                      "tts"
+                    ]
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "baseUrl": {
+                    "type": "string"
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  },
+                  "requiresKey": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "模型更新成功"
+          },
+          "404": {
+            "description": "模型不存在"
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除模型",
+        "description": "删除AI模型",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "模型删除成功"
+          },
+          "404": {
+            "description": "模型不存在"
+          }
+        }
+      }
+    },
+    "/api/ai-models/all": {
+      "get": {
+        "summary": "获取所有模型（包括未启用的）",
+        "description": "获取所有AI模型列表，包括未启用的",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回模型列表"
+          }
+        }
+      }
+    },
+    "/api/ai-models": {
+      "post": {
+        "summary": "创建新模型",
+        "description": "创建一个新的AI模型",
+        "tags": [
+          "AI Models"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "providerId",
+                  "name",
+                  "displayName",
+                  "type"
+                ],
+                "properties": {
+                  "providerId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "提供商ID"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "模型名称（唯一标识）"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "description": "显示名称"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "模型描述"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "llm",
+                      "video",
+                      "image",
+                      "tts"
+                    ],
+                    "description": "模型类型"
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "分类"
+                  },
+                  "baseUrl": {
+                    "type": "string",
+                    "description": "API基路径"
+                  },
+                  "isActive": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "requiresKey": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "模型创建成功"
+          },
+          "400": {
+            "description": "请求参数错误"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "注册新用户",
+        "description": "创建一个新的用户账号",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 30,
+                    "example": "testuser"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "test@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "注册成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "user": {
+                              "$ref": "#/components/schemas/User"
+                            },
+                            "token": {
+                              "type": "string",
+                              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "用户登录",
+        "description": "使用邮箱和密码登录，返回 JWT token",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "test@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "user": {
+                              "$ref": "#/components/schemas/User"
+                            },
+                            "token": {
+                              "type": "string",
+                              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "认证失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "获取当前用户信息",
+        "description": "获取当前登录用户的信息",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回用户信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/User"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chapters/{id}": {
+      "get": {
+        "summary": "获取章节内容",
+        "description": "根据章节ID获取章节的完整内容",
+        "tags": [
+          "Novels"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "章节ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回章节内容",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Chapter"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "章节不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/characters/draw": {
+      "post": {
+        "summary": "批量抽卡（每个角色创建一个任务）",
+        "description": "批量生成角色的人物视频（2s）或图片，每个角色创建一个独立任务。根据drawType自动选择模型（image使用grsai的sora-image，video使用grsai的sora-2）。",
+        "tags": [
+          "Character Draw"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "characterIds",
+                  "projectId"
+                ],
+                "properties": {
+                  "characterIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "角色ID数组（支持单个或多个）",
+                    "example": [
+                      "character-uuid-1",
+                      "character-uuid-2"
+                    ]
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "项目ID",
+                    "example": "project-uuid"
+                  },
+                  "drawType": {
+                    "type": "string",
+                    "enum": [
+                      "image",
+                      "video"
+                    ],
+                    "default": "image",
+                    "description": "抽卡类型，image=图片，video=视频（2秒）",
+                    "example": "image"
+                  },
+                  "apiConfig": {
+                    "type": "object",
+                    "description": "自定义AI API请求参数对象，用于适配不同AI提供商的请求格式",
+                    "example": {
+                      "prompt": "自定义提示词",
+                      "width": 1024,
+                      "height": 1024,
+                      "duration": 2
+                    }
+                  },
+                  "storageMode": {
+                    "type": "string",
+                    "enum": [
+                      "download_upload",
+                      "buffer_upload"
+                    ],
+                    "default": "download_upload",
+                    "description": "存储方式，download_upload=下载到本地再上传到Catbox，buffer_upload=直接下载Buffer然后上传到Catbox",
+                    "example": "download_upload"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "抽卡任务已创建",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "taskIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "taskId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "description": "任务ID"
+                                  },
+                                  "characterId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "description": "角色ID"
+                                  }
+                                }
+                              },
+                              "description": "任务ID数组（每个角色一个任务，包含taskId和characterId）"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/characters/draw/tasks/{taskId}": {
+      "get": {
+        "summary": "查询抽卡进度",
+        "description": "根据任务ID查询生成人物视频或图片的进度",
+        "tags": [
+          "Character Draw"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "taskId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "任务ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回任务进度",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "taskId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "characterId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "characterName": {
+                              "type": "string"
+                            },
+                            "drawType": {
+                              "type": "string",
+                              "enum": [
+                                "image",
+                                "video"
+                              ]
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "pending",
+                                "processing",
+                                "completed",
+                                "failed"
+                              ]
+                            },
+                            "progress": {
+                              "type": "integer"
+                            },
+                            "result": {
+                              "type": "object",
+                              "nullable": true,
+                              "description": "生成结果（JSON对象，包含originalUrl、finalUrl、metadata等）"
+                            },
+                            "errorMessage": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "startedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "nullable": true
+                            },
+                            "completedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "nullable": true
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "任务不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/characters/{characterId}/draw-tasks": {
+      "get": {
+        "summary": "获取角色的所有抽卡任务",
+        "description": "根据角色ID获取该角色的所有抽卡任务列表",
+        "tags": [
+          "Character Draw"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "characterId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "角色ID"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "image",
+                "video"
+              ]
+            },
+            "description": "任务类型过滤（可选）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回任务列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "drawType": {
+                                "type": "string",
+                                "enum": [
+                                  "image",
+                                  "video"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "pending",
+                                  "processing",
+                                  "completed",
+                                  "failed"
+                                ]
+                              },
+                              "progress": {
+                                "type": "integer"
+                              },
+                              "result": {
+                                "type": "object",
+                                "nullable": true
+                              },
+                              "errorMessage": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "completedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "角色不存在"
+          }
+        }
+      }
+    },
+    "/api/characters": {
+      "get": {
+        "summary": "获取当前用户的所有角色",
+        "description": "获取当前登录用户的所有角色列表",
+        "tags": [
+          "Characters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cached",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "是否只返回已缓存的角色"
+          },
+          {
+            "in": "query",
+            "name": "projectId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "项目ID，如果提供则只返回该项目和全局角色"
+          },
+          {
+            "in": "query",
+            "name": "novelId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID，如果提供则只返回该小说的角色（需要同时提供 projectId）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回角色列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Character"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "创建新角色",
+        "description": "创建一个新的角色",
+        "tags": [
+          "Characters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "小明"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "角色描述"
+                  },
+                  "age": {
+                    "type": "integer",
+                    "example": 20
+                  },
+                  "gender": {
+                    "type": "string",
+                    "example": "male"
+                  },
+                  "personality": {
+                    "type": "string",
+                    "description": "性格特征JSON数组字符串",
+                    "example": "[\"勇敢\", \"聪明\"]"
+                  },
+                  "appearance": {
+                    "type": "string",
+                    "example": "黑色短发，蓝色眼睛"
+                  },
+                  "style": {
+                    "type": "string",
+                    "example": "现代风格"
+                  },
+                  "voiceActor": {
+                    "type": "string",
+                    "description": "发音人",
+                    "example": "张三"
+                  },
+                  "voiceTone": {
+                    "type": "string",
+                    "description": "音色",
+                    "example": "温柔"
+                  },
+                  "voiceSample": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "音色示例（URL）",
+                    "example": "https://example.com/voice-sample.mp3"
+                  },
+                  "clothingStyle": {
+                    "type": "string",
+                    "description": "服饰风格",
+                    "example": "现代休闲"
+                  },
+                  "imageUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "example": "https://example.com/character.jpg"
+                  },
+                  "modelUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "example": "https://example.com/model.glb"
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "项目ID（可选），如果提供则角色属于该项目，否则为全局角色",
+                    "example": "uuid-of-project"
+                  },
+                  "novelId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "小说ID（可选），如果提供则角色属于该小说（需要同时提供 projectId）",
+                    "example": "uuid-of-novel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "角色创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Character"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/characters/{id}": {
+      "get": {
+        "summary": "获取角色详情",
+        "description": "根据角色ID获取角色详细信息",
+        "tags": [
+          "Characters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "角色ID"
+          },
+          {
+            "in": "query",
+            "name": "novelId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID（可选，用于验证角色是否属于该小说）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回角色详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Character"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "角色不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "更新角色",
+        "description": "更新角色信息",
+        "tags": [
+          "Characters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "角色ID"
+          },
+          {
+            "in": "query",
+            "name": "novelId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID（可选，用于验证角色是否属于该小说）"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "age": {
+                    "type": "integer"
+                  },
+                  "gender": {
+                    "type": "string"
+                  },
+                  "personality": {
+                    "type": "string"
+                  },
+                  "appearance": {
+                    "type": "string"
+                  },
+                  "style": {
+                    "type": "string"
+                  },
+                  "voiceActor": {
+                    "type": "string",
+                    "description": "发音人"
+                  },
+                  "voiceTone": {
+                    "type": "string",
+                    "description": "音色"
+                  },
+                  "voiceSample": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "音色示例（URL）"
+                  },
+                  "clothingStyle": {
+                    "type": "string",
+                    "description": "服饰风格"
+                  },
+                  "imageUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "modelUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "项目ID（可选），如果提供则角色属于该项目，否则为全局角色"
+                  },
+                  "novelId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "小说ID（可选），如果提供则角色属于该小说（需要同时提供 projectId）"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "角色更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Character"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "角色不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除角色",
+        "description": "删除指定的角色",
+        "tags": [
+          "Characters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "角色ID"
+          },
+          {
+            "in": "query",
+            "name": "novelId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID（可选，用于验证角色是否属于该小说）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "角色删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "角色不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/characters/merge": {
+      "post": {
+        "summary": "自动合并重复角色",
+        "description": "合并同一用户、同一项目下同名的角色，保留最完整的信息，合并 shotIds。如果未提供 projectId，则合并用户下所有项目的重复角色。",
+        "tags": [
+          "Characters"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "项目ID（可选），如果提供则只合并该项目下的角色，否则合并用户下所有项目的角色",
+                    "example": "uuid-of-project"
+                  },
+                  "novelId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "小说ID（可选），如果提供则只合并该小说下的角色（需要同时提供 projectId）",
+                    "example": "uuid-of-novel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "合并成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "totalProcessed": {
+                              "type": "integer",
+                              "description": "处理的总角色数"
+                            },
+                            "mergedCount": {
+                              "type": "integer",
+                              "description": "合并的角色数（被删除的重复角色数）"
+                            },
+                            "deletedCount": {
+                              "type": "integer",
+                              "description": "删除的重复角色数"
+                            },
+                            "remainingCount": {
+                              "type": "integer",
+                              "description": "剩余的角色数（合并后）"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text/upload": {
+      "post": {
+        "summary": "上传并解析整本小说",
+        "description": "上传小说文件（TXT、EPUB、DOC），自动解析元数据和章节，保存到数据库和文件系统",
+        "tags": [
+          "Novels"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "projectId"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "小说文件（.txt, .epub, .doc, .docx）"
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "description": "项目ID（必填）",
+                    "example": "3d202970-ef1e-417d-a741-092bf62a47a0"
+                  },
+                  "fileName": {
+                    "type": "string",
+                    "description": "文件名（可选，默认使用上传的文件名）",
+                    "example": "斗破苍穹.txt"
+                  },
+                  "encoding": {
+                    "type": "string",
+                    "description": "文件编码（可选，默认UTF-8，支持UTF-8、GBK等）",
+                    "example": "UTF-8"
+                  },
+                  "customTitle": {
+                    "type": "string",
+                    "description": "自定义书名（可选，如果提供则优先使用此名称）",
+                    "example": "斗破苍穹"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "小说上传并解析成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "novelId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "小说的唯一标识ID"
+                            },
+                            "title": {
+                              "type": "string",
+                              "description": "书名"
+                            },
+                            "author": {
+                              "type": "string",
+                              "description": "作者名称"
+                            },
+                            "coverUrl": {
+                              "type": "string",
+                              "nullable": true,
+                              "description": "封面图片URL"
+                            },
+                            "summary": {
+                              "type": "string",
+                              "description": "小说简介"
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              },
+                              "description": "标签列表"
+                            },
+                            "totalChapters": {
+                              "type": "integer",
+                              "description": "总章节数"
+                            },
+                            "chapterList": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "chapterId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "chapterTitle": {
+                                    "type": "string"
+                                  },
+                                  "order": {
+                                    "type": "integer"
+                                  },
+                                  "wordCount": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/text/paste": {
+      "post": {
+        "summary": "上传并解析文本粘贴片段",
+        "description": "上传文本片段，可以选择扩写后解析或直接解析分割成章节。需要填写书本基本信息和存储方式。",
+        "tags": [
+          "Novels"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "text",
+                  "projectId",
+                  "storageLocation"
+                ],
+                "properties": {
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "项目ID（必填）"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "文本内容（必填）"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "书名（可选）"
+                  },
+                  "author": {
+                    "type": "string",
+                    "description": "作者名称（可选）"
+                  },
+                  "summary": {
+                    "type": "string",
+                    "description": "简介（可选）"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "标签列表（可选）"
+                  },
+                  "coverUrl": {
+                    "type": "string",
+                    "description": "封面URL或文件路径（可选）"
+                  },
+                  "storageLocation": {
+                    "type": "string",
+                    "enum": [
+                      "local",
+                      "remote"
+                    ],
+                    "description": "存储位置（必填，local 或 remote）"
+                  },
+                  "expandText": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否扩写（默认false，直接分割章节；true则先扩写再分割）"
+                  },
+                  "modelId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "LLM模型ID（可选，如果expandText为true且未指定，则使用项目配置的模型或第一个可用模型）"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "文本上传并解析成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "novelId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "title": {
+                              "type": "string"
+                            },
+                            "author": {
+                              "type": "string"
+                            },
+                            "coverUrl": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "summary": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "totalChapters": {
+                              "type": "integer"
+                            },
+                            "chapterList": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "chapterId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "chapterTitle": {
+                                    "type": "string"
+                                  },
+                                  "order": {
+                                    "type": "integer"
+                                  },
+                                  "wordCount": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/novels": {
+      "get": {
+        "summary": "获取当前用户的小说列表",
+        "description": "获取当前用户的小说列表，可以通过 projectId 查询参数筛选指定项目的小说",
+        "tags": [
+          "Novels"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "projectId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "项目ID（可选），如果提供则只返回该项目的小说"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回小说列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Novel"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "项目不存在（当提供了 projectId 时）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/novels/{id}/chapters": {
+      "get": {
+        "summary": "获取小说的章节列表",
+        "description": "根据小说ID获取该小说的所有章节列表（不包含章节内容）",
+        "tags": [
+          "Novels"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回章节列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "chapterId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "chapterTitle": {
+                                "type": "string"
+                              },
+                              "order": {
+                                "type": "integer"
+                              },
+                              "wordCount": {
+                                "type": "integer"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "小说不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/novels/{id}": {
+      "get": {
+        "summary": "获取小说详情",
+        "description": "根据小说ID获取小说详细信息（不包含章节列表，章节列表请使用 /api/novels/{id}/chapters 接口）。如果提供了 chapterId 查询参数，则同时返回该章节的详情（包括章节内容）。",
+        "tags": [
+          "Novels"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID"
+          },
+          {
+            "in": "query",
+            "name": "chapterId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "章节ID（可选），如果提供则返回该章节的详情（包括章节内容）",
+            "example": "723a5193-ffc7-458c-9b63-184cc44ad33b"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回小说详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            {
+                              "$ref": "#/components/schemas/Novel"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "chapter": {
+                                  "type": "object",
+                                  "description": "章节详情（仅在提供了 chapterId 参数时返回）",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "title": {
+                                      "type": "string"
+                                    },
+                                    "order": {
+                                      "type": "integer"
+                                    },
+                                    "wordCount": {
+                                      "type": "integer"
+                                    },
+                                    "content": {
+                                      "type": "string",
+                                      "description": "章节内容"
+                                    },
+                                    "createdAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    },
+                                    "updatedAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "小说不存在或章节不存在（当提供了 chapterId 时）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除整本小说",
+        "description": "删除指定的小说及其所有关联数据，包括章节记录和文件系统中的所有文件",
+        "tags": [
+          "Novels"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "小说删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "无权限删除该小说",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "小说不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "summary": "获取当前用户的所有项目",
+        "description": "获取当前登录用户的所有项目列表，支持分页和状态筛选",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "页码"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "每页数量"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "processing",
+                "reviewing",
+                "generating",
+                "rendering",
+                "completed",
+                "failed"
+              ]
+            },
+            "description": "项目状态筛选"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回项目列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "projects": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/Project"
+                              }
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "page": {
+                                  "type": "integer"
+                                },
+                                "limit": {
+                                  "type": "integer"
+                                },
+                                "total": {
+                                  "type": "integer"
+                                },
+                                "pages": {
+                                  "type": "integer"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "创建新项目",
+        "description": "创建一个新的动画项目，需要配置AI模型和存储位置",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "storageLocation"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "我的第一个动画项目"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "项目描述"
+                  },
+                  "sourceText": {
+                    "type": "string",
+                    "example": "小说文本内容"
+                  },
+                  "configLLM": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "LLM模型ID",
+                    "example": "uuid-of-llm-model"
+                  },
+                  "configLLMKey": {
+                    "type": "string",
+                    "description": "LLM API密钥（如果配置了configLLM则必填）",
+                    "example": "sk-xxxxxxxxxxxxx"
+                  },
+                  "configVideoAI": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "视频AI模型ID",
+                    "example": "uuid-of-video-model"
+                  },
+                  "configVideoAIKey": {
+                    "type": "string",
+                    "description": "视频AI API密钥（如果配置了configVideoAI则必填）",
+                    "example": "video-api-key-xxxxx"
+                  },
+                  "configTTS": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "TTS模型ID",
+                    "example": "uuid-of-tts-model"
+                  },
+                  "configTTSKey": {
+                    "type": "string",
+                    "description": "TTS API密钥（如果配置了configTTS则必填）",
+                    "example": "tts-api-key-xxxxx"
+                  },
+                  "configImageGen": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "图片生成模型ID",
+                    "example": "uuid-of-image-model"
+                  },
+                  "configImageGenKey": {
+                    "type": "string",
+                    "description": "图片生成API密钥（如果配置了configImageGen则必填）",
+                    "example": "sd-api-key-xxxxx"
+                  },
+                  "storageLocation": {
+                    "type": "string",
+                    "enum": [
+                      "local",
+                      "remote"
+                    ],
+                    "description": "存储位置",
+                    "example": "local"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "项目创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Project"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}": {
+      "get": {
+        "summary": "获取项目详情",
+        "description": "根据项目ID获取项目详细信息",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "项目ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回项目详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Project"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "更新项目",
+        "description": "更新项目信息",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "项目ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "sourceText": {
+                    "type": "string"
+                  },
+                  "configLLM": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "configLLMKey": {
+                    "type": "string"
+                  },
+                  "configVideoAI": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "configVideoAIKey": {
+                    "type": "string"
+                  },
+                  "configTTS": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "configTTSKey": {
+                    "type": "string"
+                  },
+                  "configImageGen": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "configImageGenKey": {
+                    "type": "string"
+                  },
+                  "storageLocation": {
+                    "type": "string",
+                    "enum": [
+                      "local",
+                      "remote"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "项目更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Project"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除项目",
+        "description": "删除指定的项目",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "项目ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "项目删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/process": {
+      "post": {
+        "summary": "开始处理项目",
+        "description": "开始处理项目的文本内容，生成动画视频",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "项目ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "处理已开始",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Project"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/characters": {
+      "get": {
+        "summary": "获取项目的所有角色",
+        "description": "获取指定项目的所有角色（包括项目专属角色和全局角色）",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "项目ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回角色列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Character"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/novels": {
+      "get": {
+        "summary": "获取项目的所有小说",
+        "description": "获取指定项目的所有小说列表",
+        "tags": [
+          "Projects"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "项目ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回小说列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Novel"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenes": {
+      "get": {
+        "summary": "获取场景列表",
+        "description": "根据项目ID、小说ID获取场景列表",
+        "tags": [
+          "Scenes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "projectId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "项目ID（可选）"
+          },
+          {
+            "in": "query",
+            "name": "novelId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID（可选）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回场景列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Scene"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "新增场景",
+        "description": "新增场景，并关联相关镜头（需要同步剧幕的变更）",
+        "tags": [
+          "Scenes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "actId",
+                  "address"
+                ],
+                "properties": {
+                  "actId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "剧幕ID"
+                  },
+                  "novelId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true,
+                    "description": "小说ID（可选，如果不提供则使用剧幕关联的小说ID）"
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true,
+                    "description": "项目ID（可选，如果不提供则使用剧幕关联的项目ID）"
+                  },
+                  "address": {
+                    "type": "string",
+                    "description": "场景地址/地点"
+                  },
+                  "sceneDescription": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "场景描述"
+                  },
+                  "shotIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "关联的镜头ID列表"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "场景创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Scene"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenes/generate-image": {
+      "post": {
+        "summary": "生成场景图（支持单个或批量）",
+        "description": "生成场景图，调用文生图API模型。支持传入单个场景ID或场景ID数组进行批量生成。",
+        "tags": [
+          "Scenes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sceneIds",
+                  "projectId"
+                ],
+                "properties": {
+                  "sceneIds": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "单个场景ID"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "description": "场景ID数组（批量生成）"
+                      }
+                    ],
+                    "example": [
+                      "scene-uuid-1",
+                      "scene-uuid-2"
+                    ]
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "项目ID"
+                  },
+                  "modelId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true,
+                    "description": "使用的AI模型ID（可选，如果不提供则使用项目配置的模型）"
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "自定义提示词（可选，批量生成时应用于所有场景，如果不提供则根据每个场景描述自动生成）"
+                  },
+                  "config": {
+                    "type": "object",
+                    "description": "额外配置选项",
+                    "properties": {
+                      "width": {
+                        "type": "integer",
+                        "default": 1024,
+                        "description": "图片宽度"
+                      },
+                      "height": {
+                        "type": "integer",
+                        "default": 1024,
+                        "description": "图片高度"
+                      },
+                      "style": {
+                        "type": "string",
+                        "default": "realistic",
+                        "description": "生成风格"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "场景图生成任务已创建",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "description": "单个场景生成结果",
+                              "properties": {
+                                "taskId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "description": "任务ID"
+                                },
+                                "sceneId": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "status": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "description": "批量生成结果",
+                              "properties": {
+                                "totalCount": {
+                                  "type": "integer",
+                                  "description": "总任务数"
+                                },
+                                "tasks": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "taskId": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "sceneId": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "status": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误"
+          }
+        }
+      }
+    },
+    "/api/scenes/{sceneId}": {
+      "put": {
+        "summary": "修改场景描述",
+        "description": "修改场景描述和其他信息",
+        "tags": [
+          "Scenes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sceneId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "场景ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string",
+                    "description": "场景地址/地点"
+                  },
+                  "sceneDescription": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "场景描述"
+                  },
+                  "shotIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "关联的镜头ID列表"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "场景更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Scene"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenes/image-tasks/{taskId}": {
+      "get": {
+        "summary": "查询场景图生成进度",
+        "description": "根据场景图的任务ID查询生成进度",
+        "tags": [
+          "Scenes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "taskId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "任务ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回任务进度",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "taskId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "sceneId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "sceneAddress": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "pending",
+                                "processing",
+                                "completed",
+                                "failed"
+                              ]
+                            },
+                            "progress": {
+                              "type": "integer",
+                              "description": "进度百分比（0-100）"
+                            },
+                            "imageUrl": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "filePath": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "errorMessage": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "metadata": {
+                              "type": "object",
+                              "nullable": true
+                            },
+                            "startedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "nullable": true
+                            },
+                            "completedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "nullable": true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/novels/{novelId}/script/generate": {
+      "post": {
+        "summary": "启动剧本生成",
+        "description": "根据配置的并发策略，将选中的章节分组并启动剧本生成任务",
+        "tags": [
+          "Scripts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "novelId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "projectId"
+                ],
+                "properties": {
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "项目ID（必填）"
+                  },
+                  "selectedChapterIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "选中的章节ID列表（可选，如果不提供则使用所有章节或指定范围）"
+                  },
+                  "taskType": {
+                    "type": "string",
+                    "enum": [
+                      "by_chapters",
+                      "by_words"
+                    ],
+                    "default": "by_chapters",
+                    "description": "任务类型（按章节数或按字数）"
+                  },
+                  "chaptersPerTask": {
+                    "type": "integer",
+                    "default": 1,
+                    "minimum": 1,
+                    "description": "每N章定义一个并发任务（taskType为by_chapters时有效）"
+                  },
+                  "wordsPerTask": {
+                    "type": "integer",
+                    "default": 4000,
+                    "minimum": 1,
+                    "description": "每N字定义一个并发任务（taskType为by_words时有效）"
+                  },
+                  "startChapter": {
+                    "type": "integer",
+                    "description": "起始章节序号（可选，与endChapter一起使用指定范围）"
+                  },
+                  "endChapter": {
+                    "type": "integer",
+                    "description": "结束章节序号（可选，与startChapter一起使用指定范围）"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "剧本生成任务已启动",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "tasks": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "taskId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "chapterRange": {
+                                    "type": "string"
+                                  },
+                                  "wordCount": {
+                                    "type": "integer"
+                                  },
+                                  "status": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            },
+                            "totalTasks": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/novels/{novelId}/script/tasks": {
+      "get": {
+        "summary": "获取小说的所有剧本生成任务",
+        "description": "查询指定小说的所有剧本生成任务及其进度",
+        "tags": [
+          "Scripts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "novelId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回任务列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "taskId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "chapterRange": {
+                                "type": "string"
+                              },
+                              "wordCount": {
+                                "type": "integer"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "pending",
+                                  "processing",
+                                  "completed",
+                                  "failed"
+                                ]
+                              },
+                              "progress": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "result": {
+                                "type": "object",
+                                "nullable": true
+                              },
+                              "errorMessage": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "startedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                              },
+                              "completedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "小说不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/script/tasks/{taskId}": {
+      "get": {
+        "summary": "获取单个任务详情",
+        "description": "查询指定剧本生成任务的详细信息，包括结果",
+        "tags": [
+          "Scripts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "taskId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "任务ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回任务详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "taskId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "novelId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "projectId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "taskType": {
+                              "type": "string"
+                            },
+                            "chapterIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "chapterRange": {
+                              "type": "string"
+                            },
+                            "wordCount": {
+                              "type": "integer"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "progress": {
+                              "type": "integer"
+                            },
+                            "result": {
+                              "type": "object",
+                              "nullable": true
+                            },
+                            "errorMessage": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "任务不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/script/tasks/{taskId}/regenerate": {
+      "post": {
+        "summary": "重新生成剧本数据结构",
+        "description": "根据任务ID、项目ID、小说ID重新生成剧本数据结构",
+        "tags": [
+          "Script"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "taskId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "任务ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "projectId",
+                  "novelId"
+                ],
+                "properties": {
+                  "projectId": {
+                    "type": "string",
+                    "description": "项目ID"
+                  },
+                  "novelId": {
+                    "type": "string",
+                    "description": "小说ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "重新生成任务已启动",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "taskId": {
+                          "type": "string"
+                        },
+                        "novelId": {
+                          "type": "string"
+                        },
+                        "projectId": {
+                          "type": "string"
+                        },
+                        "taskType": {
+                          "type": "string"
+                        },
+                        "chapterRange": {
+                          "type": "string"
+                        },
+                        "wordCount": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "progress": {
+                          "type": "integer"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误"
+          },
+          "404": {
+            "description": "任务不存在"
+          }
+        }
+      }
+    },
+    "/api/novels/{novelId}/acts": {
+      "get": {
+        "summary": "获取小说的所有剧幕（按章节顺序排序）",
+        "description": "获取指定小说的所有剧幕，按照章节顺序排序，确保即使异步处理也不会打乱顺序",
+        "tags": [
+          "Script"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "novelId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回剧幕列表（按章节顺序排序）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Act"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "小说不存在"
+          }
+        }
+      }
+    },
+    "/api/system-prompts": {
+      "post": {
+        "summary": "创建系统提示词",
+        "description": "创建新的系统提示词，用于配置AI功能",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "functionKey",
+                  "prompt"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "提示词名称"
+                  },
+                  "functionKey": {
+                    "type": "string",
+                    "description": "功能标识（唯一，如：text_expansion, script_generation等）"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "功能描述"
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "description": "提示词内容"
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "分类（如：llm, video, image, tts等）"
+                  },
+                  "isActive": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "是否启用"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "额外配置信息（JSON对象）"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "系统提示词创建成功"
+          },
+          "400": {
+            "description": "请求参数错误"
+          }
+        }
+      },
+      "get": {
+        "summary": "获取所有系统提示词",
+        "description": "获取所有系统提示词列表，支持按分类和状态筛选",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string"
+            },
+            "description": "分类筛选（可选）"
+          },
+          {
+            "in": "query",
+            "name": "isActive",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "是否启用筛选（可选）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回提示词列表"
+          }
+        }
+      }
+    },
+    "/api/system-prompts/{id}": {
+      "get": {
+        "summary": "根据ID获取系统提示词",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回提示词"
+          },
+          "404": {
+            "description": "提示词不存在"
+          }
+        }
+      },
+      "put": {
+        "summary": "更新系统提示词",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "functionKey": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "prompt": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  },
+                  "metadata": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功"
+          },
+          "404": {
+            "description": "提示词不存在"
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除系统提示词",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功"
+          },
+          "404": {
+            "description": "提示词不存在"
+          }
+        }
+      }
+    },
+    "/api/system-prompts/function/{functionKey}": {
+      "get": {
+        "summary": "根据功能标识获取系统提示词",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "functionKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回提示词"
+          },
+          "404": {
+            "description": "提示词不存在"
+          }
+        }
+      }
+    },
+    "/api/system-prompts/category/{category}": {
+      "get": {
+        "summary": "根据分类获取系统提示词",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回提示词列表"
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

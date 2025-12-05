@@ -1,0 +1,465 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String   @id @default(uuid())
+  username             String   @unique
+  email                String   @unique
+  password             String
+  role                 String   @default("user") // user, admin
+  avatar               String?
+  bio                  String?
+  language             String   @default("zh-CN")
+  theme                String   @default("light") // light, dark
+  projectsCount        Int      @default(0)
+  totalVideosGenerated Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  projects        Project[]
+  characters      Character[]
+  novels          Novel[]
+  scriptTasks     ScriptTask[]
+  acts            Act[] // 关联的剧幕
+  scenes          Scene[] // 关联的场景
+  shots           Shot[] // 关联的镜头
+  drawTasks       CharacterDrawTask[] // 角色抽卡任务
+  sceneImageTasks SceneImageTask[] // 场景图生成任务
+
+  @@index([email])
+  @@index([username])
+}
+
+model Project {
+  id                      String    @id @default(uuid())
+  userId                  String
+  title                   String
+  description             String?
+  sourceText              String?
+  // 项目配置
+  configLLM               String    @default("deepseek") // LLM AI 选择
+  configLLMKey            String? // LLM API 密钥（加密存储）
+  configVideoAI           String    @default("default") // 视频 AI 选择
+  configVideoAIKey        String? // 视频 AI API 密钥（加密存储）
+  configTTS               String    @default("default") // 声音合成选择
+  configTTSKey            String? // TTS API 密钥（加密存储）
+  configImageGen          String    @default("default") // 图片生成选择
+  configImageGenKey       String? // 图片生成 API 密钥（加密存储）
+  // 存储位置配置（必须）
+  storageLocation         String // local 或 remote
+  status                  String    @default("pending") // pending, processing, reviewing, generating, rendering, completed, failed
+  progress                Int       @default(0) // 0-100
+  processedTextLanguage   String?
+  processedTextScenes     String? // JSON string
+  processedTextCharacters String? // JSON string
+  scriptScenes            String? // JSON string
+  storyboardShots         String? // JSON string
+  assetsCharacters        String? // JSON string
+  assetsBackgrounds       String? // JSON string
+  assetsAudio             String? // JSON string
+  outputVideoUrl          String?
+  outputSubtitleUrl       String?
+  outputFormat            String?
+  outputResolution        String?
+  outputDuration          Int?
+  completedAt             DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  characters      Character[] // 项目关联的角色
+  novels          Novel[] // 项目关联的小说
+  scriptTasks     ScriptTask[] // 剧本生成任务
+  acts            Act[] // 关联的剧幕
+  scenes          Scene[] // 关联的场景
+  shots           Shot[] // 关联的镜头
+  drawTasks       CharacterDrawTask[] // 角色抽卡任务
+  sceneImageTasks SceneImageTask[] // 场景图生成任务
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status])
+}
+
+model Character {
+  id            String   @id @default(uuid())
+  userId        String
+  projectId     String? // 关联的项目ID，如果为空则表示是用户级别的角色（所有项目共享）
+  novelId       String? // 关联的小说ID（从剧本生成任务中提取的角色）
+  taskId        String? // 关联的剧本生成任务ID
+  name          String
+  description   String?
+  age           String? // 改为String类型，因为可能是"25岁"这样的描述
+  gender        String?
+  personality   String? // JSON array string 或 字符串描述
+  appearance    String?
+  background    String? // 人物背景
+  style         String?
+  voiceActor    String? // 发音人
+  voiceTone     String? // 音色
+  voiceSample   String? // 音色示例（URL）
+  clothingStyle String? // 服饰风格
+  imageUrl      String?
+  videoUrl      String? // 角色视频URL（从抽卡任务生成）
+  modelUrl      String?
+  shotIds       String? // JSON数组，存储关联的镜头ID列表
+  cached        Boolean  @default(false)
+  usageCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project?              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  novel       Novel?                @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  drawTasks CharacterDrawTask[] // 关联的抽卡任务
+
+  @@unique([userId, name, projectId]) // 同一用户在同一项目下角色名唯一，如果projectId为null则全局唯一
+  @@index([userId, name])
+  @@index([projectId])
+  @@index([novelId])
+  @@index([taskId])
+  @@index([cached])
+}
+
+// 角色抽卡任务（简化版：每个角色一个任务）
+model CharacterDrawTask {
+  id             String    @id @default(uuid())
+  userId         String
+  projectId      String? // 关联的项目ID
+  characterId    String // 关联的角色ID（单个角色）
+  drawType       String    @default("image") // "image" | "video"
+  modelId        String? // 使用的AI模型ID
+  apiConfig      String? // JSON字符串，存储AI API的自定义请求参数
+  storageMode    String    @default("download_upload") // "download_upload" | "buffer_upload"
+  status         String    @default("pending") // pending, processing, completed, failed
+  progress       Int       @default(0) // 0-100
+  result         String? // JSON字符串，存储生成结果（类似 ScriptTask）
+  errorMessage   String? // 错误信息
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([characterId])
+  @@index([status])
+  @@index([userId, status])
+  @@index([characterId, status])
+}
+
+// AI 提供商
+model AIProvider {
+  id          String   @id @default(uuid())
+  name        String   @unique // 提供商名称，如 "DeepSeek", "OpenAI", "Stability AI" 等
+  displayName String // 显示名称
+  description String? // 提供商描述
+  website     String? // 官网链接
+  logoUrl     String? // Logo 链接
+  isActive    Boolean  @default(true) // 是否启用
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  models AIModel[]
+
+  @@index([isActive])
+}
+
+// AI 模型
+model AIModel {
+  id          String   @id @default(uuid())
+  providerId  String
+  name        String // 模型名称，如 "deepseek-chat", "gpt-4", "stable-diffusion-xl" 等
+  displayName String // 显示名称
+  description String? // 模型描述
+  type        String // 模型类型: "llm" | "video" | "image" | "tts"
+  category    String? // 分类，如 "chat", "completion", "generation" 等
+  baseUrl     String? // API 基路径/端点
+  isActive    Boolean  @default(true) // 是否启用
+  requiresKey Boolean  @default(true) // 是否需要API密钥
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  provider AIProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, name])
+  @@index([providerId])
+  @@index([type])
+  @@index([isActive])
+  @@index([type, isActive])
+}
+
+// 小说
+model Novel {
+  id            String   @id @default(uuid())
+  projectId     String // 关联的项目ID
+  userId        String // 创建者ID
+  title         String // 书名
+  author        String? // 作者
+  summary       String? // 简介
+  coverUrl      String? // 封面URL
+  tags          String? // 标签（JSON数组字符串）
+  fileName      String // 原始文件名
+  filePath      String // 原始文件存储路径（相对于originFiles）
+  fileSize      Int // 文件大小（字节）
+  encoding      String? // 文件编码
+  totalChapters Int      @default(0) // 总章节数
+  totalWords    Int      @default(0) // 总字数
+  status        String   @default("parsed") // parsed, processing, error
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapters        Chapter[]
+  characters      Character[] // 从剧本生成任务中提取的角色
+  scriptTasks     ScriptTask[]
+  acts            Act[] // 关联的剧幕
+  scenes          Scene[] // 关联的场景
+  shots           Shot[] // 关联的镜头
+  sceneImageTasks SceneImageTask[] // 场景图生成任务
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+}
+
+// 章节
+model Chapter {
+  id          String   @id @default(uuid())
+  novelId     String // 关联的小说ID
+  title       String // 章节标题
+  content     String? // 章节内容（可选，可以存储在文件系统中）
+  contentPath String? // 章节内容文件路径（如果内容存储在文件中）
+  order       Int // 章节顺序（从1开始）
+  wordCount   Int      @default(0) // 字数统计
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  novel Novel @relation(fields: [novelId], references: [id], onDelete: Cascade)
+
+  @@unique([novelId, order])
+  @@index([novelId, order])
+}
+
+// 剧本生成任务
+model ScriptTask {
+  id           String    @id @default(uuid())
+  novelId      String // 关联的小说ID
+  projectId    String // 关联的项目ID
+  userId       String // 创建者ID
+  taskType     String    @default("by_chapters") // "by_chapters" | "by_words"
+  chapterIds   String // JSON数组，存储章节ID列表
+  chapterRange String? // 章节范围描述，如 "第1-3章"
+  wordCount    Int       @default(0) // 该任务包含的总字数
+  status       String    @default("pending") // pending, processing, completed, failed
+  progress     Int       @default(0) // 0-100
+  result       String? // JSON字符串，存储生成的剧本结果
+  errorMessage String? // 错误信息
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  novel   Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  acts    Act[] // 关联的剧幕
+
+  @@index([novelId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([status])
+  @@index([novelId, status])
+}
+
+// 剧幕（Act）
+model Act {
+  id                String   @id @default(uuid())
+  scriptTaskId      String // 关联的剧本生成任务ID
+  novelId           String // 关联的小说ID
+  projectId         String // 关联的项目ID
+  userId            String // 创建者ID
+  actName           String // 剧幕名称，如 "第一幕"
+  content           String? // 剧幕内容描述
+  highlight         String? // 爽点描述
+  emotionalCurve    String? // 情感曲线描述
+  rhythm            String? // 节奏描述
+  chapterIds        String? // JSON数组，存储关联的章节ID列表
+  order             Int      @default(0) // 剧幕顺序（在任务内的顺序）
+  startChapterOrder Int? // 起始章节顺序号（用于按章节顺序排序，取关联章节中的最小order值）
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  scriptTask ScriptTask @relation(fields: [scriptTaskId], references: [id], onDelete: Cascade)
+  novel      Novel      @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scenes     ActScene[] // 通过中间表关联的场景
+  shots      Shot[] // 关联的镜头
+
+  @@index([scriptTaskId])
+  @@index([novelId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([order])
+  @@index([novelId, startChapterOrder]) // 用于按章节顺序查询剧幕
+}
+
+// 场景（Scene）
+model Scene {
+  id               String   @id @default(uuid())
+  novelId          String // 关联的小说ID
+  projectId        String // 关联的项目ID
+  userId           String // 创建者ID
+  address          String // 场景地址/地点（用于判断是否为同一场景）
+  sceneDescription String? // 场景描述
+  sceneImage       String? // 场景图片URL
+  shotIds          String? // JSON数组，存储关联的镜头ID列表
+  order            Int      @default(0) // 场景顺序（在第一个关联的 Act 中的顺序）
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  acts       ActScene[] // 通过中间表关联多个 Act
+  novel      Novel            @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  project    Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageTasks SceneImageTask[] // 关联的场景图生成任务
+  shots      Shot[] // 关联的镜头
+
+  @@index([novelId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([address]) // 用于查找相同地址的场景
+  @@index([novelId, address]) // 用于在同一小说中查找相同地址的场景
+}
+
+// Act 和 Scene 的多对多关系表
+model ActScene {
+  id        String   @id @default(uuid())
+  actId     String // 关联的剧幕ID
+  sceneId   String // 关联的场景ID
+  order     Int      @default(0) // 场景在该 Act 中的顺序
+  createdAt DateTime @default(now())
+
+  act   Act   @relation(fields: [actId], references: [id], onDelete: Cascade)
+  scene Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+
+  @@unique([actId, sceneId]) // 确保同一个 Act 不会重复关联同一个 Scene
+  @@index([actId])
+  @@index([sceneId])
+  @@index([actId, order]) // 用于按顺序查询 Act 的场景
+}
+
+// 场景图生成任务
+model SceneImageTask {
+  id           String    @id @default(uuid())
+  sceneId      String // 关联的场景ID
+  projectId    String // 关联的项目ID
+  novelId      String // 关联的小说ID
+  userId       String // 创建者ID
+  modelId      String? // 使用的AI模型ID（可选，如果不提供则使用项目配置）
+  prompt       String? // 自定义提示词（可选）
+  status       String    @default("pending") // pending, processing, completed, failed
+  progress     Int       @default(0) // 0-100
+  imageUrl     String? // 生成的图片URL
+  filePath     String? // 文件本地路径
+  errorMessage String? // 错误信息
+  metadata     String? // JSON字符串，存储额外元数据（如尺寸、风格等）
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  scene   Scene   @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  novel   Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sceneId])
+  @@index([projectId])
+  @@index([novelId])
+  @@index([userId])
+  @@index([status])
+  @@index([sceneId, status])
+}
+
+// 镜头（Shot）
+model Shot {
+  id              String   @id @default(uuid())
+  sceneId         String? // 关联的场景ID（可选，因为镜头可能直接关联到剧幕）
+  actId           String // 关联的剧幕ID
+  novelId         String // 关联的小说ID
+  projectId       String // 关联的项目ID
+  userId          String // 创建者ID
+  shotId          Int // 镜头序号（从剧本中的 shot_id）
+  duration        Int? // 镜头时长（秒）
+  shotType        String? // 镜头类型（如：中景、特写、空镜头等）
+  framing         String? // 景别
+  cameraAngle     String? // 机位角度
+  cameraMovement  String? // 镜头运动
+  characterAction String? // 角色动作
+  expression      String? // 表情
+  dialogue        String? // JSON数组，存储对话信息
+  voiceover       String? // 画外音
+  lighting        String? // 光线效果
+  atmosphere      String? // 氛围
+  bgm             String? // 背景音乐
+  fx              String? // 音效
+  isTransition    Boolean  @default(false) // 是否为转场镜头
+  characterIds    String? // JSON数组，存储关联的角色ID列表
+  metadata        String? // JSON字符串，存储额外元数据
+  order           Int      @default(0) // 镜头顺序
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  scene   Scene?  @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  act     Act     @relation(fields: [actId], references: [id], onDelete: Cascade)
+  novel   Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sceneId])
+  @@index([actId])
+  @@index([novelId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([order])
+  @@index([actId, order])
+}
+
+// 系统提示词
+model SystemPrompt {
+  id          String   @id @default(uuid())
+  name        String // 提示词名称
+  functionKey String   @unique // 功能标识（如：text_expansion, script_generation等）
+  description String? // 功能描述
+  prompt      String // 提示词内容
+  category    String? // 分类（如：llm, video, image, tts等）
+  isActive    Boolean  @default(true) // 是否启用
+  version     Int      @default(1) // 版本号
+  metadata    String? // JSON字符串，存储额外配置信息
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([functionKey])
+  @@index([category])
+  @@index([isActive])
+  @@index([category, isActive])
+}
+
+// 扩展Novel模型，添加scriptTasks关系
+
+// 扩展Project模型，添加scriptTasks关系

@@ -1,0 +1,341 @@
+{
+  "voices": [
+    {
+      "name": "沉稳男声",
+      "description": "沉稳男声，适合讲述故事，旁白，解说等",
+      "tags": ["标准普通话", "男性", "中年", "沉稳"],
+      "voice_id": "226905123659904",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/13761d11-f20d-4f9a-810f-fa9bf4a7114e-1753363127.mp3"
+    },
+    {
+      "name": "广播女声",
+      "description": "广播女声，适合新闻播报，旁白，解说等",
+      "tags": [
+        "中文（普通话）",
+        "标准普通话",
+        "女性",
+        "中年",
+        "播音腔",
+        "广播腔"
+      ],
+      "voice_id": "226905123659905",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/17a56a09-db36-4655-8faf-d0e7678dfad1-1753362780.mp3"
+    },
+    {
+      "name": "潇洒男声",
+      "description": "潇洒男声，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "成人", "洒脱", "不羁"],
+      "voice_id": "226905123659906",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/7bf75c98-3e8e-4bc0-b373-13e3178e9de9-1753387726.mp3"
+    },
+    {
+      "name": "成熟女声",
+      "description": "成熟女声，适合讲述故事，旁白，解说等",
+      "tags": [
+        "中文（普通话）",
+        "标准普通话",
+        "女性",
+        "成人",
+        "迷人",
+        "优雅",
+        "魅惑"
+      ],
+      "voice_id": "228691456335936",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/67e41f88-8fa4-4b45-ab0d-066a11dab7a3-1753362785.mp3"
+    },
+    {
+      "name": "傲慢女声",
+      "description": "傲慢女声，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "成人", "傲慢", "高冷"],
+      "voice_id": "227503656312897",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/127e8426-68db-4fca-b887-9dd56583fa3b-1753362795.mp3"
+    },
+    {
+      "name": "温柔阿姨",
+      "description": "温柔阿姨，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "中年", "温柔", "和善"],
+      "voice_id": "226905123659909",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/baa89f15-3713-4edd-91a9-f1a2b755d1c9-1753362790.mp3"
+    },
+    {
+      "name": "机器人音",
+      "description": "机器人音，适合科幻题材，角色配音等",
+      "tags": [
+        "中文（普通话）",
+        "标准普通话",
+        "男性",
+        "成人",
+        "电子音",
+        "机械"
+      ],
+      "voice_id": "227503656312898",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/70a4e8c9-5127-40bc-96cd-3a54346f0b4f-1753363914.mp3"
+    },
+    {
+      "name": "清爽男声",
+      "description": "清爽男声，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "成人", "欢快", "清新"],
+      "voice_id": "226905123659910",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/5e5b3a56-60d3-44ed-95c7-1933e166e8bf-1753430791.mp3"
+    },
+    {
+      "name": "港式空乘",
+      "description": "港式空乘，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "南方口音", "女性", "中年", "礼貌", "专业"],
+      "voice_id": "226905123659911",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/1336c685-65fc-4c8f-a311-99c78810c95f-1753379870.mp3"
+    },
+    {
+      "name": "幽默长者",
+      "description": "幽默长者，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "北方口音", "男性", "老年", "清新", "幽默"],
+      "voice_id": "226905123659912",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/027e8c81-d565-4e70-a8cd-e738aaf0d92b-1753365002.mp3"
+    },
+    {
+      "name": "绅士男声",
+      "description": "绅士男声，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "成人", "磁性", "优雅"],
+      "voice_id": "226905123659913",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/beecbd92-1611-4d16-bbdd-25a52862d20e-1753430812.mp3"
+    },
+    {
+      "name": "温暖闺蜜",
+      "description": "温暖闺蜜，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "成人", "清脆", "温暖"],
+      "voice_id": "226905123659914",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/a7009a01-4516-4b5a-b44a-ffbdc76ae8b5-1753384015.mp3"
+    },
+    {
+      "name": "固执朋友",
+      "description": "固执朋友，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "成人", "不羁", "直率"],
+      "voice_id": "226905123659915",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/eeaa2d5e-1afd-4508-ae29-9c1aea03bdc2-1753430825.mp3"
+    },
+    {
+      "name": "甜美女士",
+      "description": "甜美女士，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "成人", "柔和", "甜美"],
+      "voice_id": "226905123659916",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/4c85b0d6-5fcc-4386-87d9-20890a5047c9-1753384046.mp3"
+    },
+    {
+      "name": "南方男声",
+      "description": "南方男声，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "南方口音", "男性", "成人", "认真", "朴实"],
+      "voice_id": "226905123659917",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/297a5d91-7314-4251-9760-1b437f8c1fa1-1753379872.mp3"
+    },
+    {
+      "name": "知性女声",
+      "description": "知性女声，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "中年", "抒情", "知性"],
+      "voice_id": "226905123659918",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/4c3e6b77-4416-4194-b6a0-e1b573959a48-1753417948.mp3"
+    },
+    {
+      "name": "温柔青年",
+      "description": "温柔青年，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "成人", "温柔", "温和"],
+      "voice_id": "226905123659919",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/1a82866f-0e26-40b2-ab6a-fa0d2ba41561-1753409901.mp3"
+    },
+    {
+      "name": "温暖女孩",
+      "description": "温暖女孩，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "青年", "柔和", "温暖"],
+      "voice_id": "226905123659920",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/984b7049-eafc-4e32-9cb3-656aea3f15a6-1753384003.mp3"
+    },
+    {
+      "name": "男播音员",
+      "description": "男播音员，适合新闻播报，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "中年", "磁性", "专业"],
+      "voice_id": "226905123659921",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/d528e68a-9504-474f-9f18-634cda0784ba-1753371375.mp3"
+    },
+    {
+      "name": "和善长者",
+      "description": "和善长者，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "老年", "和善", "慈祥"],
+      "voice_id": "226905123659922",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/9878ffa6-e93a-4c1f-834a-18b8c9440b52-1753374537.mp3"
+    },
+    {
+      "name": "可爱精灵",
+      "description": "可爱精灵，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "少年", "可爱", "活泼"],
+      "voice_id": "226905123659923",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/96c03850-9e90-4bb2-b5f4-bc67955f0fcc-1753383507.mp3"
+    },
+    {
+      "name": "电台主播",
+      "description": "电台主播，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "成人", "诗意", "文艺"],
+      "voice_id": "226905123659924",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/dc9e0831-dfa6-4f15-8964-fb06a739cf06-1753373987.mp3"
+    },
+    {
+      "name": "抒情男声",
+      "description": "抒情男声，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "成人", "醇厚", "抒情"],
+      "voice_id": "226905123659925",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/ba24fdce-be99-473a-9197-6139c2a4906b-1753435098.mp3"
+    },
+    {
+      "name": "直率男孩",
+      "description": "直率男孩，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "青年", "深思", "直率"],
+      "voice_id": "226905123659926",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/ba24fdce-be99-473a-9197-6139c2a4906b-1753435098.mp3"
+    },
+    {
+      "name": "真诚成人",
+      "description": "真诚成人，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "成人", "鼓励", "真诚"],
+      "voice_id": "226905123659927",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/298010b8-6cef-4f2b-841a-7cad1c9899c2-1753435109.mp3"
+    },
+    {
+      "name": "温柔长者",
+      "description": "温柔长者，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "成人", "温馨", "温柔"],
+      "voice_id": "226905123659928",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/567db557-87b9-4d8d-aed2-5405de1372cb-1753384020.mp3"
+    },
+    {
+      "name": "清脆女孩",
+      "description": "清脆女孩，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "青年", "温暖", "清脆"],
+      "voice_id": "226905123659929",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/3830ad47-1199-463b-b852-918cd8a5ba9a-1753400689.mp3"
+    },
+    {
+      "name": "纯真男孩",
+      "description": "纯真男孩，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "男性", "青年", "专注", "纯真"],
+      "voice_id": "226905123659930",
+      "gender": "男",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/ba7f9e7e-7947-44d3-8325-4edcb5713c07-1753435115.mp3"
+    },
+    {
+      "name": "柔和女孩",
+      "description": "柔和女孩，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "南方口音", "女性", "成人", "亲切", "柔和"],
+      "voice_id": "226905123659931",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/a8a7c6b7-289e-464d-82fc-980b6a8b8327-1753356788.mp3"
+    },
+    {
+      "name": "知性女孩",
+      "description": "知性女孩，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "成人", "知性", "优雅"],
+      "voice_id": "209533299589231",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/d80c9e79-af75-4650-95ea-b536bff5edcc-1753384027.mp3"
+    },
+    {
+      "name": "热心女孩",
+      "description": "热心女孩，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "成人", "热心", "温暖"],
+      "voice_id": "209533299589233",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/8672d2be-b931-4bbf-8686-c5ee2ca62136-1753384033.mp3"
+    },
+    {
+      "name": "随性女孩",
+      "description": "随性女孩，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "成人", "随性", "自然"],
+      "voice_id": "209533299589235",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/6c5efeb8-050f-460e-8763-137030db5354-1753384036.mp3"
+    },
+    {
+      "name": "探索女孩",
+      "description": "探索女孩，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "成人", "探索", "好奇"],
+      "voice_id": "209533299589237",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/91236ac7-cd85-41ba-859f-8aaccc0ba4ae-1753384038.mp3"
+    },
+    {
+      "name": "热心阿姨",
+      "description": "热心阿姨，适合讲述故事，旁白，解说等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "中年", "和善", "热心"],
+      "voice_id": "209533299589239",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/dccbf088-205a-436b-a5ba-352ea1716197-1753400712.mp3"
+    },
+    {
+      "name": "害羞女孩",
+      "description": "害羞女孩，适合角色配音，对话等",
+      "tags": ["中文（普通话）", "标准普通话", "女性", "少年", "害羞", "腼腆"],
+      "voice_id": "209533299589241",
+      "gender": "女",
+      "language": "中文",
+      "url": "https://cdn.notegpt.io/notegpt/static/sample/18c9fca4-c244-464a-b197-6635378e709d-1753372330.mp3"
+    }
+  ]
+}

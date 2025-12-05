@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统提示词管理 - StoryX</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .login-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .login-section h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .user-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .user-info.active {
+            display: block;
+        }
+
+        .user-info span {
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .prompts-section {
+            display: none;
+        }
+
+        .prompts-section.active {
+            display: block;
+        }
+
+        .prompts-list {
+            margin-bottom: 30px;
+        }
+
+        .prompt-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .prompt-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .prompt-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .prompt-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .prompt-meta span {
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .prompt-description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .prompt-content {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 13px;
+            color: #555;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 15px;
+        }
+
+        .edit-form {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            margin-top: 15px;
+        }
+
+        .edit-form.active {
+            display: block;
+        }
+
+        .edit-form textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .edit-form textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.active {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 系统提示词管理</h1>
+            <p>管理和配置 AI 功能的系统提示词</p>
+        </div>
+
+        <div class="content">
+            <!-- 登录区域 -->
+            <div class="login-section" id="loginSection">
+                <h2>登录</h2>
+                <div class="form-group">
+                    <label for="email">邮箱</label>
+                    <input type="email" id="email" placeholder="请输入邮箱" value="test@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" placeholder="请输入密码" value="123456">
+                </div>
+                <button class="btn btn-primary" id="loginBtn">登录</button>
+            </div>
+
+            <!-- 用户信息 -->
+            <div class="user-info" id="userInfo">
+                <span>已登录用户：</span><span id="userEmail"></span>
+                <button class="btn btn-secondary" id="logoutBtn" style="float: right; padding: 5px 15px; font-size: 12px;">退出登录</button>
+            </div>
+
+            <!-- 提示信息 -->
+            <div class="alert" id="alert"></div>
+
+            <!-- 提示词列表 -->
+            <div class="prompts-section" id="promptsSection">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>系统提示词列表</h2>
+                    <button class="btn btn-primary" id="refreshBtn">刷新列表</button>
+                </div>
+                <div class="prompts-list" id="promptsList">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+        let authToken = localStorage.getItem('authToken') || '';
+        let currentUser = null;
+
+        // DOM 元素
+        const loginSection = document.getElementById('loginSection');
+        const userInfo = document.getElementById('userInfo');
+        const userEmail = document.getElementById('userEmail');
+        const promptsSection = document.getElementById('promptsSection');
+        const promptsList = document.getElementById('promptsList');
+        const alert = document.getElementById('alert');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('页面加载完成');
+
+            // 检查元素是否存在
+            if (!loginBtn) {
+                console.error('登录按钮未找到');
+                return;
+            }
+
+            console.log('绑定事件监听器');
+            loginBtn.addEventListener('click', (e) => {
+                console.log('登录按钮被点击');
+                e.preventDefault();
+                handleLogin();
+            });
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
+            }
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', loadPrompts);
+            }
+
+            if (authToken) {
+                checkAuth();
+            } else {
+                showLogin();
+            }
+        });
+
+        // 显示提示信息
+        function showAlert(message, type = 'success') {
+            alert.textContent = message;
+            alert.className = `alert alert-${type} active`;
+            setTimeout(() => {
+                alert.classList.remove('active');
+            }, 5000);
+        }
+
+        // API 请求
+        async function apiRequest(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            };
+
+            if (authToken) {
+                defaultOptions.headers['Authorization'] = `Bearer ${authToken}`;
+            }
+
+            const finalOptions = { ...defaultOptions, ...options };
+            if (options.body && typeof options.body === 'object') {
+                finalOptions.body = JSON.stringify(options.body);
+            }
+
+            const fullUrl = `${API_BASE_URL}${url}`;
+            console.log('API 请求:', fullUrl, finalOptions);
+
+            try {
+                const response = await fetch(fullUrl, finalOptions);
+                console.log('响应状态:', response.status, response.statusText);
+
+                let data;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    console.error('非JSON响应:', text);
+                    throw new Error('服务器返回了非JSON格式的响应');
+                }
+
+                console.log('响应数据:', data);
+
+                if (!response.ok) {
+                    throw new Error(data.message || `请求失败 (${response.status})`);
+                }
+
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                if (error.message) {
+                    throw error;
+                } else {
+                    throw new Error('网络请求失败，请检查服务器是否运行');
+                }
+            }
+        }
+
+        // 登录
+        async function handleLogin() {
+            console.log('handleLogin 被调用');
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            console.log('邮箱:', email, '密码长度:', password.length);
+
+            if (!email || !password) {
+                showAlert('请输入邮箱和密码', 'error');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = '登录中...';
+
+            try {
+                console.log('发送登录请求...');
+                const data = await apiRequest('/auth/login', {
+                    method: 'POST',
+                    body: { email, password },
+                });
+
+                console.log('登录成功:', data);
+                authToken = data.data.token;
+                currentUser = data.data.user;
+                localStorage.setItem('authToken', authToken);
+
+                showAlert('登录成功！', 'success');
+                showPrompts();
+            } catch (error) {
+                console.error('登录错误:', error);
+                showAlert(error.message || '登录失败，请检查邮箱和密码', 'error');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = '登录';
+            }
+        }
+
+        // 退出登录
+        function handleLogout() {
+            authToken = '';
+            currentUser = null;
+            localStorage.removeItem('authToken');
+            showLogin();
+            showAlert('已退出登录', 'success');
+        }
+
+        // 检查认证状态
+        async function checkAuth() {
+            try {
+                const data = await apiRequest('/auth/me');
+                currentUser = data.data;
+                showPrompts();
+            } catch (error) {
+                showLogin();
+                localStorage.removeItem('authToken');
+                authToken = '';
+            }
+        }
+
+        // 显示登录界面
+        function showLogin() {
+            loginSection.style.display = 'block';
+            userInfo.classList.remove('active');
+            promptsSection.classList.remove('active');
+        }
+
+        // 显示提示词界面
+        function showPrompts() {
+            loginSection.style.display = 'none';
+            userInfo.classList.add('active');
+            userEmail.textContent = currentUser?.email || '未知用户';
+            promptsSection.classList.add('active');
+            loadPrompts();
+        }
+
+        // 加载提示词列表
+        async function loadPrompts() {
+            promptsList.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const data = await apiRequest('/system-prompts');
+                const prompts = data.data || [];
+
+                if (prompts.length === 0) {
+                    promptsList.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p>暂无系统提示词</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                promptsList.innerHTML = prompts.map(prompt => createPromptCard(prompt)).join('');
+
+                // 绑定编辑按钮事件
+                prompts.forEach(prompt => {
+                    const editBtn = document.getElementById(`editBtn-${prompt.id}`);
+                    const cancelBtn = document.getElementById(`cancelBtn-${prompt.id}`);
+                    const saveBtn = document.getElementById(`saveBtn-${prompt.id}`);
+                    const editForm = document.getElementById(`editForm-${prompt.id}`);
+                    const promptTextarea = document.getElementById(`promptText-${prompt.id}`);
+
+                    if (editBtn) {
+                        editBtn.addEventListener('click', () => {
+                            editForm.classList.add('active');
+                            promptTextarea.value = prompt.prompt;
+                        });
+                    }
+
+                    if (cancelBtn) {
+                        cancelBtn.addEventListener('click', () => {
+                            editForm.classList.remove('active');
+                        });
+                    }
+
+                    if (saveBtn) {
+                        saveBtn.addEventListener('click', () => {
+                            updatePrompt(prompt.id, promptTextarea.value);
+                        });
+                    }
+                });
+            } catch (error) {
+                promptsList.innerHTML = `<div class="alert alert-error active">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 创建提示词卡片
+        function createPromptCard(prompt) {
+            const isActive = prompt.isActive ? 'badge-active' : 'badge-inactive';
+            const statusText = prompt.isActive ? '启用' : '禁用';
+            const preview = prompt.prompt.substring(0, 200) + (prompt.prompt.length > 200 ? '...' : '');
+
+            return `
+                <div class="prompt-card">
+                    <div class="prompt-header">
+                        <div class="prompt-title">${prompt.name}</div>
+                        <span class="badge ${isActive}">${statusText}</span>
+                    </div>
+                    <div class="prompt-meta">
+                        <span>功能标识: ${prompt.functionKey}</span>
+                        <span>分类: ${prompt.category || '未分类'}</span>
+                        <span>版本: v${prompt.version}</span>
+                    </div>
+                    ${prompt.description ? `<div class="prompt-description">${prompt.description}</div>` : ''}
+                    <div class="prompt-content">${escapeHtml(preview)}</div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="editBtn-${prompt.id}">编辑</button>
+                    </div>
+                    <div class="edit-form" id="editForm-${prompt.id}">
+                        <div class="form-group">
+                            <label>提示词内容</label>
+                            <textarea id="promptText-${prompt.id}" placeholder="请输入提示词内容...">${escapeHtml(prompt.prompt)}</textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-success" id="saveBtn-${prompt.id}">保存</button>
+                            <button class="btn btn-secondary" id="cancelBtn-${prompt.id}">取消</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 更新提示词
+        async function updatePrompt(id, promptText) {
+            if (!promptText.trim()) {
+                showAlert('提示词内容不能为空', 'error');
+                return;
+            }
+
+            const saveBtn = document.getElementById(`saveBtn-${id}`);
+            const originalText = saveBtn.textContent;
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存中...';
+
+            try {
+                await apiRequest(`/system-prompts/${id}`, {
+                    method: 'PUT',
+                    body: { prompt: promptText },
+                });
+
+                showAlert('提示词更新成功！', 'success');
+                document.getElementById(`editForm-${id}`).classList.remove('active');
+                loadPrompts();
+            } catch (error) {
+                showAlert(error.message || '更新失败', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+            }
+        }
+
+        // HTML 转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 回车键登录
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+    </script>
+</body>
+</html>
+

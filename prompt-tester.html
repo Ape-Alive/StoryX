@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 提示词测试工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px 32px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .left-panel, .right-panel {
+            padding: 24px;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .right-panel {
+            border-right: none;
+            background: #f9fafb;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        select, input[type="text"], input[type="password"], textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            line-height: 1.6;
+        }
+
+        .system-prompt-textarea {
+            min-height: 200px;
+        }
+
+        .user-message-textarea {
+            min-height: 100px;
+        }
+
+        .api-config {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .result-container {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 400px;
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+
+        .result-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #1f2937;
+        }
+
+        .result-content.json {
+            background: #f9fafb;
+            padding: 16px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .optimize-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn-optimize {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-optimize:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .optimize-panel {
+            display: none;
+            margin-top: 16px;
+            padding: 16px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+        }
+
+        .optimize-panel.active {
+            display: block;
+        }
+
+        .feedback-textarea {
+            min-height: 100px;
+            font-family: inherit;
+            margin-bottom: 12px;
+        }
+
+        .optimized-prompt {
+            background: white;
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            position: relative;
+        }
+
+        .optimized-prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .optimized-prompt-title {
+            font-weight: 600;
+            color: #059669;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .optimized-prompt-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #1f2937;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .optimize-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn-apply {
+            background: #10b981;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-apply:hover {
+            background: #059669;
+        }
+
+        .btn-dismiss {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .optimize-explanation {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .left-panel, .right-panel {
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI 提示词测试工具</h1>
+            <p>通用AI API测试平台 - 支持多种AI服务提供商</p>
+        </div>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="section">
+                    <div class="section-title">API 配置</div>
+                    <div class="form-group">
+                        <label for="apiProvider">AI 服务提供商</label>
+                        <select id="apiProvider">
+                            <option value="openai">OpenAI (GPT-4/GPT-3.5)</option>
+                            <option value="anthropic">Anthropic (Claude)</option>
+                            <option value="custom">自定义 API</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="apiKey">API Key</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="apiKey" placeholder="输入你的 API Key">
+                            <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="model">模型名称</label>
+                        <input type="text" id="model" placeholder="例如: gpt-4, claude-3-opus-20240229">
+                    </div>
+                    <div class="form-group">
+                        <label for="apiBaseUrl">API Base URL (可选)</label>
+                        <input type="text" id="apiBaseUrl" placeholder="留空使用默认地址">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">提示词配置</div>
+                    <div class="form-group">
+                        <label for="systemPrompt">System Prompt</label>
+                        <textarea id="systemPrompt" class="system-prompt-textarea" placeholder="输入 System Prompt..."></textarea>
+                    </div>
+
+                    <div class="optimize-section" id="optimizeSection" style="display: none;">
+                        <button class="btn btn-optimize" onclick="toggleOptimizePanel()">
+                            <span>✨</span>
+                            <span>AI 优化提示词</span>
+                        </button>
+
+                        <div class="optimize-panel" id="optimizePanel">
+                            <div class="form-group">
+                                <label for="feedbackInput">问题反馈 / 期望结果</label>
+                                <textarea id="feedbackInput" class="feedback-textarea" placeholder="描述当前结果的问题，或者说明你期望得到什么样的结果...&#10;&#10;例如：&#10;- 生成的内容缺少结构化JSON输出&#10;- 角色设定不够详细&#10;- 分镜脚本缺少镜头类型信息&#10;- 希望增加更多的情绪描述"></textarea>
+                            </div>
+                            <button class="btn btn-primary" onclick="optimizePrompt()">
+                                <span>🔧</span>
+                                <span>生成优化建议</span>
+                            </button>
+
+                            <div id="optimizedPromptContainer" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="userMessage">User Message</label>
+                        <textarea id="userMessage" class="user-message-textarea" placeholder="输入用户消息..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="temperature">Temperature</label>
+                        <input type="text" id="temperature" value="0.7" placeholder="0.0 - 2.0">
+                    </div>
+                    <div class="form-group">
+                        <label for="maxTokens">Max Tokens</label>
+                        <input type="text" id="maxTokens" value="2000" placeholder="最大输出token数">
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="sendRequest()">
+                        <span>🚀</span>
+                        <span>发送请求</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearResult()">
+                        <span>🗑️</span>
+                        <span>清空结果</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadExample()">
+                        <span>📝</span>
+                        <span>加载示例</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="section">
+                    <div class="section-title">返回结果</div>
+                    <div class="result-container">
+                        <div class="loading" id="loading">
+                            <div class="spinner"></div>
+                            <div>正在请求 AI API...</div>
+                        </div>
+                        <div id="resultContent" class="result-content" style="display: none;"></div>
+                        <div id="errorMessage" style="display: none;"></div>
+                    </div>
+                    <div class="stats" id="stats" style="display: none;">
+                        <div class="stat-item">
+                            <span>⏱️</span>
+                            <span id="timeTaken">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>📊</span>
+                            <span id="tokenCount">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>💰</span>
+                            <span id="costEstimate">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 加载示例提示词
+        function loadExample() {
+            const exampleSystemPrompt = `你是 Enterprise ScriptAgent v3.0 —— 企业级影视叙事 + 分镜结构化生成智能体。你的职责是将任意文本（小说、片段、提纲、口述）自动转换为可直接用于影视生成的结构化剧本。
+
+核心能力：
+1. 文本理解与结构化抽象能力：角色识别、实体消歧、关系抽取、情绪/语气识别、事件抽取、时序排序。
+2. 专业影视编剧能力：三幕/五幕结构、爽文短剧结构、动漫叙事、主角目标/障碍/冲突/高潮/解决。
+3. 视频生成结构化脚本能力：每个镜头包含镜头ID、类型、景别、机位、角色动作轨迹、表情、语气、台词、旁白、光线、氛围、BGM、FX。
+4. 高稳定角色一致性管理：角色名字、性格、目标、关系统一，外貌统一，行为逻辑统一。
+
+工作流：
+1. 文本清洗与理解
+2. 角色识别 & 实体消歧
+3. 故事结构重建（三幕/五幕、爽点插入、节奏调整）
+4. 剧本生成（剧情大纲、分场景脚本、台词、旁白）
+5. 分镜脚本生成（Shot JSON，每镜头详细信息）
+6. 结构化输出（JSON，适配视频生成系统）
+
+写作风格：根据用户指定风格生成剧本（爽文短剧、古风甜宠、霸总、都市爽点、悬疑反转、动漫战斗、广告TVC等），未指定时默认爽点节奏最快的短剧风格。
+
+爽点策略：自动植入反差、打脸、权力压制、反转、情绪爆发、智商碾压等20大爽点。
+
+严格遵守规则：
+- 角色不能冲突，剧情逻辑自洽，镜头可拍摄、合理，读者易理解，不啰嗦，台词有情绪价值。
+
+最终输出必须包含三部分：
+1. 角色设定（实体消歧后）
+2. 剧情分幕大纲（含爽点标注）
+3. 结构化分镜 JSON（可直接用于视频生成）`;
+
+            const exampleUserMessage = `请将以下小说片段转换为结构化剧本：
+
+"林峰站在公司大楼前，看着这座曾经属于他的帝国。三年前，他被最信任的合伙人背叛，一夜之间失去了一切。如今，他带着新的身份和更强的实力回来了。今天，他要让所有人知道，谁才是真正的王者。"`;
+
+            document.getElementById('systemPrompt').value = exampleSystemPrompt;
+            document.getElementById('userMessage').value = exampleUserMessage;
+            document.getElementById('model').value = 'gpt-4';
+        }
+
+        // 切换密码显示
+        function togglePassword() {
+            const input = document.getElementById('apiKey');
+            const button = document.querySelector('.toggle-password');
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️';
+            }
+        }
+
+        // 根据API提供商设置默认值
+        document.getElementById('apiProvider').addEventListener('change', function() {
+            const provider = this.value;
+            const modelInput = document.getElementById('model');
+            const baseUrlInput = document.getElementById('apiBaseUrl');
+
+            switch(provider) {
+                case 'openai':
+                    modelInput.value = 'gpt-4';
+                    baseUrlInput.value = '';
+                    baseUrlInput.placeholder = '留空使用默认: https://api.openai.com/v1';
+                    break;
+                case 'anthropic':
+                    modelInput.value = 'claude-3-opus-20240229';
+                    baseUrlInput.value = '';
+                    baseUrlInput.placeholder = '留空使用默认: https://api.anthropic.com/v1';
+                    break;
+                case 'custom':
+                    modelInput.value = '';
+                    baseUrlInput.value = '';
+                    baseUrlInput.placeholder = '输入自定义 API 地址';
+                    break;
+            }
+        });
+
+        // 发送请求
+        async function sendRequest() {
+            const provider = document.getElementById('apiProvider').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const model = document.getElementById('model').value;
+            const baseUrl = document.getElementById('apiBaseUrl').value;
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            const userMessage = document.getElementById('userMessage').value;
+            const temperature = parseFloat(document.getElementById('temperature').value) || 0.7;
+            const maxTokens = parseInt(document.getElementById('maxTokens').value) || 2000;
+
+            // 验证输入
+            if (!apiKey) {
+                showError('请输入 API Key');
+                return;
+            }
+            if (!model) {
+                showError('请输入模型名称');
+                return;
+            }
+            if (!systemPrompt && !userMessage) {
+                showError('请至少输入 System Prompt 或 User Message');
+                return;
+            }
+
+            // 显示加载状态
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('resultContent').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('stats').style.display = 'none';
+
+            const startTime = Date.now();
+
+            try {
+                let response;
+                let result;
+
+                if (provider === 'openai' || provider === 'custom') {
+                    // OpenAI 兼容 API
+                    const url = baseUrl || 'https://api.openai.com/v1/chat/completions';
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: model,
+                            messages: [
+                                ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+                                ...(userMessage ? [{ role: 'user', content: userMessage }] : [])
+                            ],
+                            temperature: temperature,
+                            max_tokens: maxTokens
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    result = await response.json();
+                    const content = result.choices[0].message.content;
+                    const usage = result.usage;
+
+                    displayResult(content, usage, startTime);
+                } else if (provider === 'anthropic') {
+                    // Anthropic Claude API
+                    const url = baseUrl || 'https://api.anthropic.com/v1/messages';
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': apiKey,
+                            'anthropic-version': '2023-06-01'
+                        },
+                        body: JSON.stringify({
+                            model: model,
+                            max_tokens: maxTokens,
+                            temperature: temperature,
+                            messages: [
+                                ...(userMessage ? [{ role: 'user', content: userMessage }] : [])
+                            ],
+                            ...(systemPrompt ? { system: systemPrompt } : {})
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    result = await response.json();
+                    const content = result.content[0].text;
+                    const usage = result.usage;
+
+                    displayResult(content, usage, startTime);
+                }
+
+            } catch (error) {
+                showError(`请求失败: ${error.message}`);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        // 存储最后一次的结果，用于优化
+        let lastResult = null;
+        let lastUsage = null;
+
+        // 显示结果
+        function displayResult(content, usage, startTime) {
+            const resultContent = document.getElementById('resultContent');
+            const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+
+            // 保存结果用于优化
+            lastResult = content;
+            lastUsage = usage;
+
+            // 尝试格式化 JSON
+            let formattedContent = content;
+            let isJson = false;
+            try {
+                // 尝试提取 JSON 部分
+                const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/```\s*([\s\S]*?)\s*```/);
+                if (jsonMatch) {
+                    const jsonStr = jsonMatch[1];
+                    const parsed = JSON.parse(jsonStr);
+                    formattedContent = content.replace(jsonMatch[0], '```json\n' + JSON.stringify(parsed, null, 2) + '\n```');
+                } else {
+                    // 尝试直接解析整个内容
+                    const parsed = JSON.parse(content);
+                    formattedContent = JSON.stringify(parsed, null, 2);
+                    isJson = true;
+                }
+            } catch (e) {
+                // 不是 JSON，保持原样
+            }
+
+            resultContent.textContent = formattedContent;
+            resultContent.className = 'result-content' + (isJson ? ' json' : '');
+            resultContent.style.display = 'block';
+
+            // 显示优化按钮区域
+            document.getElementById('optimizeSection').style.display = 'block';
+
+            // 显示统计信息
+            if (usage) {
+                const promptTokens = usage.prompt_tokens || usage.input_tokens || 0;
+                const completionTokens = usage.completion_tokens || usage.output_tokens || 0;
+                const totalTokens = usage.total_tokens || (promptTokens + completionTokens);
+
+                document.getElementById('timeTaken').textContent = `${timeTaken}s`;
+                document.getElementById('tokenCount').textContent = `输入: ${promptTokens} | 输出: ${completionTokens} | 总计: ${totalTokens}`;
+
+                // 简单的成本估算（GPT-4 价格示例）
+                const cost = (promptTokens * 0.03 + completionTokens * 0.06) / 1000;
+                document.getElementById('costEstimate').textContent = `约 $${cost.toFixed(4)}`;
+
+                document.getElementById('stats').style.display = 'flex';
+            } else {
+                document.getElementById('timeTaken').textContent = `${timeTaken}s`;
+                document.getElementById('stats').style.display = 'flex';
+            }
+        }
+
+        // 显示错误
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // 清空结果
+        function clearResult() {
+            document.getElementById('resultContent').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('stats').style.display = 'none';
+            document.getElementById('optimizeSection').style.display = 'none';
+            document.getElementById('optimizePanel').classList.remove('active');
+            document.getElementById('optimizedPromptContainer').style.display = 'none';
+            document.getElementById('resultContent').textContent = '';
+            document.getElementById('feedbackInput').value = '';
+            lastResult = null;
+            lastUsage = null;
+        }
+
+        // 切换优化面板
+        function toggleOptimizePanel() {
+            const panel = document.getElementById('optimizePanel');
+            panel.classList.toggle('active');
+            if (!panel.classList.contains('active')) {
+                document.getElementById('optimizedPromptContainer').style.display = 'none';
+            }
+        }
+
+        // 优化提示词
+        async function optimizePrompt() {
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            const userMessage = document.getElementById('userMessage').value;
+            const feedback = document.getElementById('feedbackInput').value;
+
+            if (!lastResult) {
+                showError('请先执行一次测试，获得结果后再优化');
+                return;
+            }
+
+            if (!feedback.trim()) {
+                showError('请输入问题反馈或期望结果');
+                return;
+            }
+
+            const provider = document.getElementById('apiProvider').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const model = document.getElementById('model').value;
+            const baseUrl = document.getElementById('apiBaseUrl').value;
+
+            if (!apiKey) {
+                showError('请输入 API Key');
+                return;
+            }
+
+            // 构建优化请求的提示词
+            const optimizationPrompt = `你是一个专业的提示词工程师。请根据以下信息分析和优化 System Prompt。
+
+**当前 System Prompt:**
+${systemPrompt || '(无)'}
+
+**用户输入 (User Message):**
+${userMessage || '(无)'}
+
+**当前 AI 生成的结果:**
+${lastResult.substring(0, 2000)}${lastResult.length > 2000 ? '...(结果已截断)' : ''}
+
+**用户反馈/期望:**
+${feedback}
+
+**任务要求:**
+1. 分析当前 System Prompt 的问题和不足
+2. 根据用户反馈，理解用户的真实需求
+3. 生成优化后的 System Prompt，确保能够解决用户反馈的问题
+4. 保持原有 System Prompt 的核心功能和结构
+5. 明确指出做了哪些优化和改进
+
+**输出格式:**
+请按照以下JSON格式输出：
+{
+  "analysis": "分析当前System Prompt的问题",
+  "optimizations": ["优化点1", "优化点2", "优化点3"],
+  "optimized_prompt": "优化后的完整System Prompt",
+  "explanation": "详细说明为什么这样优化，以及优化后的效果预期"
+}
+
+请确保输出的JSON格式正确，可以直接解析。`;
+
+            // 显示加载状态
+            const optimizeBtn = document.querySelector('#optimizePanel .btn-primary');
+            if (!optimizeBtn) {
+                showError('找不到优化按钮');
+                return;
+            }
+            const originalText = optimizeBtn.innerHTML;
+            optimizeBtn.disabled = true;
+            optimizeBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; border-width: 2px; margin: 0;"></div> 正在生成优化建议...';
+
+            try {
+                let response;
+                let result;
+
+                if (provider === 'openai' || provider === 'custom') {
+                    const url = baseUrl || 'https://api.openai.com/v1/chat/completions';
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: model,
+                            messages: [
+                                { role: 'user', content: optimizationPrompt }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 4000
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    result = await response.json();
+                    var content = result.choices[0].message.content;
+                } else if (provider === 'anthropic') {
+                    const url = baseUrl || 'https://api.anthropic.com/v1/messages';
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': apiKey,
+                            'anthropic-version': '2023-06-01'
+                        },
+                        body: JSON.stringify({
+                            model: model,
+                            max_tokens: 4000,
+                            temperature: 0.7,
+                            messages: [
+                                { role: 'user', content: optimizationPrompt }
+                            ]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    result = await response.json();
+                    var content = result.content[0].text;
+                }
+
+                // 解析优化结果
+                let optimizationData;
+                try {
+                    // 尝试提取JSON
+                    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/```\s*([\s\S]*?)\s*```/);
+                    if (jsonMatch) {
+                        optimizationData = JSON.parse(jsonMatch[1]);
+                    } else {
+                        optimizationData = JSON.parse(content);
+                    }
+                } catch (e) {
+                    // 如果解析失败，尝试手动提取
+                    throw new Error('无法解析优化结果，请重试');
+                }
+
+                // 显示优化结果
+                displayOptimizedPrompt(optimizationData);
+
+            } catch (error) {
+                showError(`优化失败: ${error.message}`);
+            } finally {
+                optimizeBtn.disabled = false;
+                optimizeBtn.innerHTML = originalText;
+            }
+        }
+
+        // 显示优化后的提示词
+        function displayOptimizedPrompt(data) {
+            const container = document.getElementById('optimizedPromptContainer');
+
+            const optimizedPrompt = data.optimized_prompt || data.optimizedPrompt || '';
+            const analysis = data.analysis || '';
+            const optimizations = data.optimizations || [];
+            const explanation = data.explanation || '';
+
+            // 创建HTML结构
+            const promptDiv = document.createElement('div');
+            promptDiv.className = 'optimized-prompt';
+
+            // 标题
+            const header = document.createElement('div');
+            header.className = 'optimized-prompt-header';
+            const title = document.createElement('div');
+            title.className = 'optimized-prompt-title';
+            title.innerHTML = '<span>✨</span><span>优化后的 System Prompt</span>';
+            header.appendChild(title);
+            promptDiv.appendChild(header);
+
+            // 问题分析
+            if (analysis) {
+                const analysisDiv = document.createElement('div');
+                analysisDiv.className = 'optimize-explanation';
+                analysisDiv.innerHTML = `<strong>问题分析：</strong>${escapeHtml(analysis)}`;
+                promptDiv.appendChild(analysisDiv);
+            }
+
+            // 优化点
+            if (optimizations.length > 0) {
+                const optDiv = document.createElement('div');
+                optDiv.className = 'optimize-explanation';
+                optDiv.style.marginTop = '8px';
+                let optHtml = '<strong>优化点：</strong><ul style="margin: 4px 0; padding-left: 20px;">';
+                optimizations.forEach(opt => {
+                    optHtml += `<li>${escapeHtml(opt)}</li>`;
+                });
+                optHtml += '</ul>';
+                optDiv.innerHTML = optHtml;
+                promptDiv.appendChild(optDiv);
+            }
+
+            // 优化后的提示词内容
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'optimized-prompt-content';
+            contentDiv.textContent = optimizedPrompt;
+            promptDiv.appendChild(contentDiv);
+
+            // 优化说明
+            if (explanation) {
+                const expDiv = document.createElement('div');
+                expDiv.className = 'optimize-explanation';
+                expDiv.style.marginTop = '12px';
+                expDiv.innerHTML = `<strong>优化说明：</strong>${escapeHtml(explanation)}`;
+                promptDiv.appendChild(expDiv);
+            }
+
+            // 操作按钮
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'optimize-actions';
+            const applyBtn = document.createElement('button');
+            applyBtn.className = 'btn btn-apply';
+            applyBtn.innerHTML = '<span>✅</span><span>应用优化</span>';
+            applyBtn.onclick = applyOptimizedPrompt;
+            const dismissBtn = document.createElement('button');
+            dismissBtn.className = 'btn btn-dismiss';
+            dismissBtn.innerHTML = '<span>❌</span><span>关闭</span>';
+            dismissBtn.onclick = dismissOptimizedPrompt;
+            actionsDiv.appendChild(applyBtn);
+            actionsDiv.appendChild(dismissBtn);
+            promptDiv.appendChild(actionsDiv);
+
+            container.innerHTML = '';
+            container.appendChild(promptDiv);
+            container.style.display = 'block';
+
+            // 存储优化后的prompt
+            container.dataset.optimizedPrompt = optimizedPrompt;
+        }
+
+        // HTML转义函数
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 应用优化后的提示词
+        function applyOptimizedPrompt() {
+            const container = document.getElementById('optimizedPromptContainer');
+            const optimizedPrompt = container.dataset.optimizedPrompt;
+
+            if (optimizedPrompt) {
+                document.getElementById('systemPrompt').value = optimizedPrompt;
+                // 保存到localStorage
+                localStorage.setItem('systemPrompt', optimizedPrompt);
+                // 触发change事件以保存
+                document.getElementById('systemPrompt').dispatchEvent(new Event('change'));
+
+                // 显示成功消息
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success';
+                successDiv.textContent = '✅ 已应用优化后的 System Prompt！你可以点击"发送请求"重新测试。';
+                container.insertBefore(successDiv, container.firstChild);
+
+                // 3秒后移除消息
+                setTimeout(() => {
+                    successDiv.remove();
+                }, 3000);
+            }
+        }
+
+        // 关闭优化结果
+        function dismissOptimizedPrompt() {
+            document.getElementById('optimizedPromptContainer').style.display = 'none';
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('load', function() {
+            // 从 localStorage 恢复配置
+            const savedSystemPrompt = localStorage.getItem('systemPrompt');
+            const savedUserMessage = localStorage.getItem('userMessage');
+            const savedApiKey = localStorage.getItem('apiKey');
+            const savedModel = localStorage.getItem('model');
+            const savedProvider = localStorage.getItem('apiProvider');
+
+            if (savedSystemPrompt) document.getElementById('systemPrompt').value = savedSystemPrompt;
+            if (savedUserMessage) document.getElementById('userMessage').value = savedUserMessage;
+            if (savedApiKey) document.getElementById('apiKey').value = savedApiKey;
+            if (savedModel) document.getElementById('model').value = savedModel;
+            if (savedProvider) {
+                document.getElementById('apiProvider').value = savedProvider;
+                document.getElementById('apiProvider').dispatchEvent(new Event('change'));
+            }
+        });
+
+        // 自动保存配置
+        ['systemPrompt', 'userMessage', 'apiKey', 'model', 'apiProvider'].forEach(id => {
+            const element = document.getElementById(id);
+            element.addEventListener('change', function() {
+                localStorage.setItem(id, this.value);
+            });
+        });
+    </script>
+</body>
+</html>
