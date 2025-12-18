@@ -61,8 +61,9 @@ module.exports = {
     fileStorage: {
         basePath: process.env.STORAGE_BASE_PATH || './storage', // 文件存储基础路径
         catboxApiUrl: process.env.CATBOX_API_URL || 'https://catbox.moe/user/api.php',
-        catboxUserHash: process.env.CATBOX_USER_HASH || '', // Catbox 用户哈希
-        proxyUrl: process.env.PROXY_URL || null, // 代理地址（可选，如 'http://127.0.0.1:7890'）
+        catboxUserHash: process.env.CATBOX_USER_HASH || '930908407679b3193e165a38b', // Catbox 用户哈希
+        proxyUrl: process.env.PROXY_URL || 'http://127.0.0.1:7890', // 代理地址（可选，如 'http://127.0.0.1:7890'）
+        uploadTimeout: process.env.UPLOAD_TIMEOUT || 60000, // 上传超时时间（毫秒）
     },
 
     // Root Path Configuration

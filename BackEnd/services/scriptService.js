@@ -666,6 +666,8 @@ class ScriptService {
                         name: characterName,
                         age: charData.age ? String(charData.age) : null, // 确保 age 是字符串
                         appearance: charData.appearance || null,
+                        gender: charData.gender || null,
+                        clothingStyle: charData.clothingStyle || null,
                         personality: personalityValue,
                         background: charData.background || null,
                         description: charData.description ||
@@ -715,6 +717,16 @@ class ScriptService {
                         }
                         const mergedShotIds = [...new Set([...existingShotIds, ...shotIds])];
 
+                        // 仅在有新值时更新可为空的字段，避免新数据为空覆盖旧数据
+                        const mergedData = { ...characterData };
+                        if (!characterData.appearance) mergedData.appearance = existingCharacter.appearance;
+                        if (!characterData.gender) mergedData.gender = existingCharacter.gender;
+                        if (!characterData.clothingStyle) mergedData.clothingStyle = existingCharacter.clothingStyle;
+                        if (!characterData.background) mergedData.background = existingCharacter.background;
+                        if (!characterData.description) mergedData.description = existingCharacter.description;
+                        if (!characterData.age) mergedData.age = existingCharacter.age;
+                        if (!characterData.personality) mergedData.personality = existingCharacter.personality;
+
                         // 更新角色信息，包括新的 taskId（如果不同）
                         // 注意：如果 existingCharacter.taskId 不为空且与新 taskId 不同，
                         // 我们保留原有的 taskId，或者可以更新为最新的 taskId
@@ -722,7 +734,7 @@ class ScriptService {
                         await prisma.character.update({
                             where: { id: existingCharacter.id },
                             data: {
-                                ...characterData,
+                                ...mergedData,
                                 shotIds: mergedShotIds.length > 0 ? JSON.stringify(mergedShotIds) : null,
                                 // taskId 更新为最新的任务ID（表示该角色在最新任务中被使用）
                                 taskId: taskId,
@@ -759,11 +771,20 @@ class ScriptService {
                                     }
                                     const mergedShotIds = [...new Set([...existingShotIds, ...shotIds])];
 
+                                    const mergedData = { ...characterData };
+                                    if (!characterData.appearance) mergedData.appearance = concurrentCharacter.appearance;
+                                    if (!characterData.gender) mergedData.gender = concurrentCharacter.gender;
+                                    if (!characterData.clothingStyle) mergedData.clothingStyle = concurrentCharacter.clothingStyle;
+                                    if (!characterData.background) mergedData.background = concurrentCharacter.background;
+                                    if (!characterData.description) mergedData.description = concurrentCharacter.description;
+                                    if (!characterData.age) mergedData.age = concurrentCharacter.age;
+                                    if (!characterData.personality) mergedData.personality = concurrentCharacter.personality;
+
                                     // 更新角色信息，包括新的 taskId
                                     await prisma.character.update({
                                         where: { id: concurrentCharacter.id },
                                         data: {
-                                            ...characterData,
+                                            ...mergedData,
                                             shotIds: mergedShotIds.length > 0 ? JSON.stringify(mergedShotIds) : null,
                                             // 更新 taskId 为最新的任务ID
                                             taskId: taskId,
@@ -809,7 +830,16 @@ class ScriptService {
      * @param {string} userId - 用户ID
      * @returns {Object} - 生成的任务信息
      */
-    async regenerateScript(taskId, projectId, novelId, userId) {
+    /**
+     * 重新生成剧本数据结构
+     * @param {string} taskId - 原任务ID
+     * @param {string} projectId - 项目ID
+     * @param {string} novelId - 小说ID
+     * @param {string} userId - 用户ID
+     * @param {boolean} overwrite - 是否覆盖原任务的产物（默认true）
+     * @returns {Promise<Object>} - 新任务信息
+     */
+    async regenerateScript(taskId, projectId, novelId, userId, overwrite = true) {
         const prisma = getPrisma();
 
         try {
@@ -821,10 +851,81 @@ class ScriptService {
                     projectId,
                     novelId,
                 },
+                include: {
+                    acts: {
+                        select: { id: true },
+                    },
+                },
             });
 
             if (!existingTask) {
                 throw new NotFoundError('Script task not found');
+            }
+
+            // 如果选择覆盖，删除原任务关联的所有产物
+            if (overwrite) {
+                // 1. 获取所有关联的 Act ID
+                const acts = await prisma.act.findMany({
+                    where: {
+                        scriptTaskId: taskId,
+                    },
+                    select: { id: true },
+                });
+                const actIds = acts.map(act => act.id);
+
+                // 2. 获取所有关联的 Scene ID（通过 ActScene 中间表）
+                const actScenes = await prisma.actScene.findMany({
+                    where: {
+                        actId: { in: actIds },
+                    },
+                    select: { sceneId: true },
+                });
+                const sceneIds = [...new Set(actScenes.map(as => as.sceneId))];
+
+                // 3. 删除所有关联的 Act（级联删除会同时删除 ActScene、Shot、ShotVideoTask 等）
+                await prisma.act.deleteMany({
+                    where: {
+                        scriptTaskId: taskId,
+                    },
+                });
+
+                // 4. 删除只关联到该任务的 Scene（如果 Scene 没有其他 Act 关联，则删除）
+                if (sceneIds.length > 0) {
+                    // 查找所有只关联到被删除 Act 的 Scene
+                    const orphanedScenes = await prisma.scene.findMany({
+                        where: {
+                            id: { in: sceneIds },
+                        },
+                        include: {
+                            acts: {
+                                select: { id: true },
+                            },
+                        },
+                    });
+
+                    // 删除没有其他 Act 关联的 Scene
+                    const scenesToDelete = orphanedScenes
+                        .filter(scene => scene.acts.length === 0)
+                        .map(scene => scene.id);
+
+                    if (scenesToDelete.length > 0) {
+                        await prisma.scene.deleteMany({
+                            where: {
+                                id: { in: scenesToDelete },
+                            },
+                        });
+                        logger.info(`Deleted ${scenesToDelete.length} orphaned scenes for task ${taskId}`);
+                    }
+                }
+
+                // 5. 删除关联的角色（Character 通过 taskId 字段关联）
+                const deletedCharacters = await prisma.character.deleteMany({
+                    where: {
+                        taskId: taskId,
+                    },
+                });
+
+                logger.info(`Deleted all acts (${actIds.length}), scenes, and characters (${deletedCharacters.count}) for task ${taskId} (overwrite mode)`);
             }
 
             // 获取任务的章节内容
@@ -902,6 +1003,7 @@ class ScriptService {
                 wordCount: newTask.wordCount,
                 status: newTask.status,
                 progress: newTask.progress,
+                overwrite,
                 createdAt: newTask.createdAt,
             };
         } catch (error) {
@@ -1503,6 +1605,25 @@ class ScriptService {
                 },
             });
 
+            // 处理角色列表：支持 character_list（对象数组）和 character_ids（ID数组）
+            let characterListValue = null;
+            let characterIdsValue = null;
+
+            if (shotData.character_list && Array.isArray(shotData.character_list)) {
+                // 直接存储 character_list 对象数组
+                characterListValue = JSON.stringify(shotData.character_list);
+                // 同时提取 ID 数组存储到 characterIds（向后兼容）
+                const ids = shotData.character_list
+                    .filter(char => char && char.id)
+                    .map(char => char.id);
+                if (ids.length > 0) {
+                    characterIdsValue = JSON.stringify(ids);
+                }
+            } else if (shotData.character_ids && Array.isArray(shotData.character_ids)) {
+                // 兼容旧格式：直接是 ID 数组
+                characterIdsValue = JSON.stringify(shotData.character_ids);
+            }
+
             // 准备镜头数据
             const shotRecordData = {
                 shotId: shotData.shot_id || shotIndex + 1,
@@ -1512,6 +1633,7 @@ class ScriptService {
                 cameraAngle: shotData.camera_angle || null,
                 cameraMovement: shotData.camera_movement || null,
                 characterAction: shotData.character_action || null,
+                action: shotData.action || null,
                 expression: shotData.expression || null,
                 dialogue: shotData.dialogue ? JSON.stringify(shotData.dialogue) : null,
                 voiceover: shotData.voiceover || null,
@@ -1519,8 +1641,10 @@ class ScriptService {
                 atmosphere: shotData.atmosphere || null,
                 bgm: shotData.bgm || null,
                 fx: shotData.fx || null,
+                soundEffect: shotData.sound_effect || shotData.soundEffect || null,
                 isTransition: shotData.is_transition || false,
-                characterIds: shotData.character_ids ? JSON.stringify(shotData.character_ids) : null,
+                characterList: characterListValue,
+                characterIds: characterIdsValue,
                 metadata: shotData.metadata ? JSON.stringify(shotData.metadata) : null,
                 order: shotOrder, // 使用 shotOrder 确保顺序正确
             };
@@ -1907,6 +2031,7 @@ class ScriptService {
                                 cameraAngle: shotData.camera_angle || null,
                                 cameraMovement: shotData.camera_movement || null,
                                 characterAction: shotData.character_action || null,
+                                action: shotData.action || null,
                                 expression: shotData.expression || null,
                                 dialogue: shotData.dialogue ? JSON.stringify(shotData.dialogue) : null,
                                 voiceover: shotData.voiceover || null,
@@ -1914,6 +2039,7 @@ class ScriptService {
                                 atmosphere: shotData.atmosphere || null,
                                 bgm: shotData.bgm || null,
                                 fx: shotData.fx || null,
+                                soundEffect: shotData.sound_effect || shotData.soundEffect || null,
                                 isTransition: shotData.is_transition || false,
                                 characterIds: shotData.character_ids ? JSON.stringify(shotData.character_ids) : null,
                                 metadata: shotData.metadata ? JSON.stringify(shotData.metadata) : null,

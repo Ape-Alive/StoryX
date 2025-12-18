@@ -66,7 +66,7 @@ class ScriptController {
      */
     regenerateScript = asyncHandler(async (req, res) => {
         const { taskId } = req.params;
-        const { projectId, novelId } = req.body;
+        const { projectId, novelId, overwrite = true } = req.body;
         const userId = req.user.id;
 
         if (!projectId) {
@@ -76,7 +76,7 @@ class ScriptController {
             throw new AppError('novelId is required', 400);
         }
 
-        const result = await scriptService.regenerateScript(taskId, projectId, novelId, userId);
+        const result = await scriptService.regenerateScript(taskId, projectId, novelId, userId, overwrite);
         ResponseUtil.success(res, result, 'Script regeneration started successfully', 201);
     });
 

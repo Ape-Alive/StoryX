@@ -49,6 +49,8 @@ class CharacterDrawService {
                 drawType = 'image', // 'image' | 'video'
                 apiConfig = {}, // 自定义AI API请求参数
                 storageMode = 'download_upload', // 'download_upload' | 'buffer_upload'
+                featurePromptId = null, // 功能提示词ID
+                genreStyle = null, // 题材风格
             } = options;
 
             if (drawType !== 'image' && drawType !== 'video') {
@@ -88,19 +90,31 @@ class CharacterDrawService {
                 logger.info(`Using fallback model: ${model.name} from ${model.provider.name}`);
             }
 
-            // 验证模型类型是否匹配
+            // 验证模型类型是否匹配，不匹配则尝试自动降级到首个同类型模型
             if (model.type !== drawType) {
-                throw new AppError(`Model type mismatch: expected ${drawType}, got ${model.type}`, 400);
+                logger.warn(`Model type mismatch: expected ${drawType}, got ${model.type}, modelId=${model.id}, name=${model.name}. Trying fallback.`);
+                const candidates = await aiModelService.getModelsByType(drawType);
+                if (candidates && candidates.length > 0) {
+                    model = candidates[0];
+                    logger.info(`Using fallback ${drawType} model: ${model.name} (${model.id}) from ${model.provider?.name || 'unknown'}`);
+                } else {
+                    throw new AppError(`Model type mismatch and no ${drawType} models available`, 400);
+                }
             }
 
-            // 解密API密钥
-            apiKey = decrypt(apiKey);
+            // 解密API密钥，若格式不合法则回退为原始值以便兼容明文配置
+            try {
+                apiKey = decrypt(apiKey);
+            } catch (e) {
+                logger.warn(`Decrypt project AI key failed, fallback to raw value: ${e.message}`);
+            }
 
             const modelConfig = {
                 modelId: model.id,
                 apiKey,
                 baseUrl: model.baseUrl,
                 providerName: model.provider.name,
+                modelName: model.name,
             };
 
             // 为每个角色创建任务并立即处理
@@ -130,7 +144,7 @@ class CharacterDrawService {
                 });
 
                 // 立即异步处理任务
-                this.processDrawTask(task.id, character, modelConfig, apiConfig, storageMode).catch(error => {
+                this.processDrawTask(task.id, character, modelConfig, apiConfig, storageMode, featurePromptId, genreStyle).catch(error => {
                     logger.error(`Failed to process draw task ${task.id}:`, error);
                 });
             }
@@ -148,7 +162,7 @@ class CharacterDrawService {
     /**
      * 处理抽卡任务（异步）
      */
-    async processDrawTask(taskId, character, modelConfig, apiConfig, storageMode) {
+    async processDrawTask(taskId, character, modelConfig, apiConfig, storageMode, featurePromptId = null, genreStyle = null) {
         const prisma = getPrisma();
 
         try {
@@ -179,15 +193,23 @@ class CharacterDrawService {
                 generatedData = await imageGenerationService.generateCharacterImage(
                     character,
                     modelConfig,
-                    apiConfig, // 传递自定义API参数
+                    {
+                        ...apiConfig, // 传递自定义API参数
+                        featurePromptId, // 功能提示词ID
+                        genreStyle, // 题材风格
+                    },
                     `character_${character.id}`
                 );
             } else if (drawType === 'video') {
                 generatedData = await imageGenerationService.generateCharacterVideo(
                     character,
                     modelConfig,
-                    apiConfig, // 传递自定义API参数
-                    null
+                    {
+                        ...apiConfig, // 传递自定义API参数
+                        featurePromptId, // 功能提示词ID
+                        genreStyle, // 题材风格
+                    },
+                    `character_${character.id}` // fileId
                 );
             }
 
@@ -200,11 +222,17 @@ class CharacterDrawService {
             });
 
             // 处理文件存储
+            const originalUrl = generatedData.imageUrl || generatedData.videoUrl;
+            // 校验 URL，避免下载时报 "Invalid URL"
+            if (!originalUrl || !/^https?:\/\//i.test(originalUrl)) {
+                throw new AppError(`Invalid media url returned from provider: ${originalUrl || 'empty'}`, 500);
+            }
+
             let finalUrl;
             if (storageMode === 'download_upload') {
                 // 方式1：下载到本地 → 上传到 Catbox
                 const storageResult = await fileStorageService.downloadAndUpload(
-                    generatedData.imageUrl || generatedData.videoUrl,
+                    originalUrl,
                     `characters/${character.id}`,
                     {
                         filename: `${drawType}_${character.id}_${Date.now()}.${drawType === 'image' ? 'png' : 'mp4'}`,
@@ -214,14 +242,28 @@ class CharacterDrawService {
                 );
                 finalUrl = storageResult.publicUrl;
             } else if (storageMode === 'buffer_upload') {
-                // 方式2：直接下载 Buffer → 上传到 Catbox
-                const storageResult = await fileStorageService.downloadBufferAndUpload(
-                    generatedData.imageUrl || generatedData.videoUrl,
-                    {
-                        filename: `${drawType}_${character.id}_${Date.now()}.${drawType === 'image' ? 'png' : 'mp4'}`,
-                    }
-                );
-                finalUrl = storageResult.publicUrl;
+                // 方式2：直接下载 Buffer → 上传到 Catbox，失败时回退到 download_upload
+                try {
+                    const storageResult = await fileStorageService.downloadBufferAndUpload(
+                        originalUrl,
+                        {
+                            filename: `${drawType}_${character.id}_${Date.now()}.${drawType === 'image' ? 'png' : 'mp4'}`,
+                        }
+                    );
+                    finalUrl = storageResult.publicUrl;
+                } catch (err) {
+                    logger.warn(`Buffer upload failed, fallback to download_upload: ${err.message}`);
+                    const storageResult = await fileStorageService.downloadAndUpload(
+                        originalUrl,
+                        `characters/${character.id}`,
+                        {
+                            filename: `${drawType}_${character.id}_${Date.now()}.${drawType === 'image' ? 'png' : 'mp4'}`,
+                            uploadToHosting: true,
+                            hostingProvider: 'catbox',
+                        }
+                    );
+                    finalUrl = storageResult.publicUrl;
+                }
             } else {
                 throw new AppError(`Invalid storage mode: ${storageMode}`, 400);
             }

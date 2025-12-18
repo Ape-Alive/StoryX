@@ -34,6 +34,7 @@ model User {
   shots           Shot[] // 关联的镜头
   drawTasks       CharacterDrawTask[] // 角色抽卡任务
   sceneImageTasks SceneImageTask[] // 场景图生成任务
+  shotVideoTasks  ShotVideoTask[] // 镜头视频生成任务
 
   @@index([email])
   @@index([username])
@@ -84,6 +85,7 @@ model Project {
   shots           Shot[] // 关联的镜头
   drawTasks       CharacterDrawTask[] // 角色抽卡任务
   sceneImageTasks SceneImageTask[] // 场景图生成任务
+  shotVideoTasks  ShotVideoTask[] // 镜头视频生成任务
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([status])
@@ -230,6 +232,7 @@ model Novel {
   scenes          Scene[] // 关联的场景
   shots           Shot[] // 关联的镜头
   sceneImageTasks SceneImageTask[] // 场景图生成任务
+  shotVideoTasks  ShotVideoTask[] // 镜头视频生成任务
 
   @@index([projectId])
   @@index([userId])
@@ -309,6 +312,7 @@ model Act {
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   scenes     ActScene[] // 通过中间表关联的场景
   shots      Shot[] // 关联的镜头
+  shotVideoTasks ShotVideoTask[] // 镜头视频生成任务
 
   @@index([scriptTaskId])
   @@index([novelId])
@@ -396,6 +400,43 @@ model SceneImageTask {
   @@index([sceneId, status])
 }
 
+// 镜头视频生成任务
+model ShotVideoTask {
+  id           String    @id @default(uuid())
+  shotId       String // 关联的镜头ID
+  actId        String // 关联的剧幕ID
+  projectId    String // 关联的项目ID
+  novelId      String // 关联的小说ID
+  userId       String // 创建者ID
+  modelId      String? // 使用的AI模型ID
+  apiConfig    String? // JSON字符串，存储AI API的自定义请求参数
+  status       String    @default("pending") // pending, processing, completed, failed
+  progress     Int       @default(0) // 0-100
+  videoUrl     String? // 生成的视频URL（远程路径，如catbox）
+  videoPath    String? // 生成的视频本地路径
+  errorMessage String? // 错误信息
+  metadata     String? // JSON字符串，存储额外元数据
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  shot    Shot    @relation(fields: [shotId], references: [id], onDelete: Cascade)
+  act     Act     @relation(fields: [actId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  novel   Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([shotId])
+  @@index([actId])
+  @@index([projectId])
+  @@index([novelId])
+  @@index([userId])
+  @@index([status])
+  @@index([actId, status])
+  @@index([shotId, status])
+}
+
 // 镜头（Shot）
 model Shot {
   id              String   @id @default(uuid())
@@ -411,16 +452,21 @@ model Shot {
   cameraAngle     String? // 机位角度
   cameraMovement  String? // 镜头运动
   characterAction String? // 角色动作
+  action          String? // 人物动作等
   expression      String? // 表情
   dialogue        String? // JSON数组，存储对话信息
   voiceover       String? // 画外音
   lighting        String? // 光线效果
   atmosphere      String? // 氛围
   bgm             String? // 背景音乐
-  fx              String? // 音效
+  fx              String? // 音效（旧字段，保留向后兼容）
+  soundEffect     String? // 音效
   isTransition    Boolean  @default(false) // 是否为转场镜头
-  characterIds    String? // JSON数组，存储关联的角色ID列表
+  characterIds    String? // JSON数组，存储关联的角色ID列表（向后兼容）
+  characterList   String? // JSON数组，存储角色列表（包含id、name、gender的对象数组）
   metadata        String? // JSON字符串，存储额外元数据
+  videoUrl        String? // 镜头视频URL（远程路径，如catbox）
+  videoPath       String? // 镜头视频本地路径
   order           Int      @default(0) // 镜头顺序
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -430,6 +476,7 @@ model Shot {
   novel   Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoTasks ShotVideoTask[] // 镜头视频生成任务
 
   @@index([sceneId])
   @@index([actId])
@@ -454,10 +501,30 @@ model SystemPrompt {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  featurePrompts FeaturePrompt[]
+
   @@index([functionKey])
   @@index([category])
   @@index([isActive])
   @@index([category, isActive])
+}
+
+// 功能提示词（关联系统提示词）
+model FeaturePrompt {
+  id             String   @id @default(uuid())
+  systemPromptId String
+  name           String
+  functionType   String
+  referenceWorks String?
+  referenceLinks String? // JSON字符串
+  prompt         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  systemPrompt SystemPrompt @relation(fields: [systemPromptId], references: [id], onDelete: Cascade)
+
+  @@index([systemPromptId])
+  @@index([functionType])
 }
 
 // 扩展Novel模型，添加scriptTasks关系

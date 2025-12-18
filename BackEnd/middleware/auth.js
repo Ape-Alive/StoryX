@@ -25,7 +25,14 @@ const authenticate = asyncHandler(async (req, res, next) => {
         req.user = decoded;
         next();
     } catch (error) {
-        return ResponseUtil.unauthorized(res, 'Invalid token');
+        // 提供更详细的错误信息
+        if (error.name === 'TokenExpiredError') {
+            return ResponseUtil.unauthorized(res, 'Token expired. Please login again.');
+        } else if (error.name === 'JsonWebTokenError') {
+            return ResponseUtil.unauthorized(res, 'Invalid token format.');
+        } else {
+            return ResponseUtil.unauthorized(res, `Invalid token: ${error.message}`);
+        }
     }
 });
 

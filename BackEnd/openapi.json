@@ -1636,6 +1636,17 @@
                     "default": "download_upload",
                     "description": "存储方式，download_upload=下载到本地再上传到Catbox，buffer_upload=直接下载Buffer然后上传到Catbox",
                     "example": "download_upload"
+                  },
+                  "featurePromptId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "功能提示词ID（FeaturePrompt表的id），用于获取功能提示词",
+                    "example": "feature-prompt-uuid"
+                  },
+                  "genreStyle": {
+                    "type": "string",
+                    "description": "题材风格（字符串类型），如\"古风\"、\"现代\"、\"科幻\"等",
+                    "example": "古风"
                   }
                 }
               }
@@ -2473,6 +2484,342 @@
             }
           }
         }
+      }
+    },
+    "/api/media/projects/{projectId}/novels/{novelId}/acts": {
+      "get": {
+        "summary": "获取当前项目下指定小说的所有剧幕（包含场景、镜头等信息）",
+        "description": "获取指定小说的所有剧幕，按章节顺序排序，包含场景、镜头等完整信息",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "项目ID"
+          },
+          {
+            "in": "path",
+            "name": "novelId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "小说ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回剧幕列表"
+          }
+        }
+      }
+    },
+    "/api/media/projects/{projectId}/novels/{novelId}/generate-shots": {
+      "post": {
+        "summary": "按剧幕依次生成镜头视频",
+        "description": "按剧幕顺序依次生成镜头视频，支持并发",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "novelId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "concurrency": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "并发数"
+                  },
+                  "apiConfig": {
+                    "type": "object",
+                    "description": "自定义API参数"
+                  },
+                  "allowOverwrite": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否允许覆盖已生成的视频"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "生成任务已启动"
+          }
+        }
+      }
+    },
+    "/api/media/projects/{projectId}/shots/generate": {
+      "post": {
+        "summary": "生成指定单个镜头视频",
+        "description": "根据镜头ID数组生成视频，支持并发和覆盖",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "shotIds"
+                ],
+                "properties": {
+                  "shotIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "镜头ID数组"
+                  },
+                  "concurrency": {
+                    "type": "integer",
+                    "default": 3
+                  },
+                  "apiConfig": {
+                    "type": "object"
+                  },
+                  "allowOverwrite": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "keepBoth": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否保留两者（生成新版本但不删除旧版本）"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "生成任务已启动"
+          }
+        }
+      }
+    },
+    "/api/media/projects/{projectId}/acts/{actId}/shots": {
+      "post": {
+        "summary": "新增镜头",
+        "description": "在指定剧幕中新增镜头，支持向前或向后插入",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/shots/{shotId}": {
+      "put": {
+        "summary": "修改镜头",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/shots": {
+      "delete": {
+        "summary": "删除镜头（支持批量删除）",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/dialogues/generate-audio": {
+      "post": {
+        "summary": "生成台词音频",
+        "description": "批量生成台词音频，支持并发",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/dialogues/{dialogueId}": {
+      "put": {
+        "summary": "修改台词内容",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除台词内容",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/preview/video": {
+      "get": {
+        "summary": "预览视频",
+        "description": "预览一幕的视频拼接或单个镜头视频",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "act",
+                "shot"
+              ]
+            },
+            "description": "预览类型"
+          },
+          {
+            "in": "query",
+            "name": "actId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "剧幕ID（type=act时必填）"
+          },
+          {
+            "in": "query",
+            "name": "shotId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "镜头ID（type=shot时必填）"
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/preview/video-with-audio": {
+      "get": {
+        "summary": "预览带台词音频的视频",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/export/acts": {
+      "post": {
+        "summary": "导出按幕导出视频",
+        "description": "导出指定剧幕的视频/音频/视频+音频",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/export/single": {
+      "post": {
+        "summary": "导出单个视频或音频",
+        "tags": [
+          "Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/text/upload": {
@@ -4582,7 +4929,7 @@
         "summary": "重新生成剧本数据结构",
         "description": "根据任务ID、项目ID、小说ID重新生成剧本数据结构",
         "tags": [
-          "Script"
+          "Scripts"
         ],
         "security": [
           {
@@ -4689,7 +5036,7 @@
         "summary": "获取小说的所有剧幕（按章节顺序排序）",
         "description": "获取指定小说的所有剧幕，按照章节顺序排序，确保即使异步处理也不会打乱顺序",
         "tags": [
-          "Script"
+          "Scripts"
         ],
         "security": [
           {
@@ -5022,6 +5369,222 @@
         "responses": {
           "200": {
             "description": "成功返回提示词列表"
+          }
+        }
+      }
+    },
+    "/api/system-prompts/{systemPromptId}/feature-prompts": {
+      "post": {
+        "summary": "创建功能提示词",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "systemPromptId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "关联的系统提示词ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "functionType",
+                  "prompt"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "functionType": {
+                    "type": "string"
+                  },
+                  "referenceWorks": {
+                    "type": "string",
+                    "description": "参考作品名称"
+                  },
+                  "referenceLinks": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "prompt": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功"
+          }
+        }
+      },
+      "get": {
+        "summary": "获取功能提示词列表",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "systemPromptId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "functionType",
+            "schema": {
+              "type": "string"
+            },
+            "description": "按功能类型筛选"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功"
+          }
+        }
+      }
+    },
+    "/api/system-prompts/feature-prompts/{id}": {
+      "get": {
+        "summary": "获取单个功能提示词",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功"
+          }
+        }
+      },
+      "put": {
+        "summary": "更新功能提示词",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "functionType": {
+                    "type": "string"
+                  },
+                  "referenceWorks": {
+                    "type": "string"
+                  },
+                  "referenceLinks": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "prompt": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功"
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除功能提示词",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功"
           }
         }
       }

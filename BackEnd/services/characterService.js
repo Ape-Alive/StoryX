@@ -377,10 +377,7 @@ class CharacterService {
             const characters = await prisma.character.findMany({
                 where: {
                     userId,
-                    OR: [
-                        { projectId: projectId },
-                        { projectId: null }, // 全局角色
-                    ],
+                    projectId: projectId, // 只取该项目下的角色（包含 novelId 关联在同项目下）
                 },
                 include: {
                     project: {
@@ -394,33 +391,7 @@ class CharacterService {
             });
 
             // Parse JSON fields
-            return characters.map(char => {
-                const result = { ...char };
-
-                // 解析 personality
-                if (char.personality) {
-                    if (typeof char.personality === 'string') {
-                        try {
-                            result.personality = JSON.parse(char.personality);
-                        } catch (e) {
-                            // 如果不是有效的 JSON，可能是普通字符串，转换为数组
-                            if (char.personality.includes('，') || char.personality.includes(',')) {
-                                result.personality = char.personality.split(/[，,]/).map(s => s.trim()).filter(s => s);
-                            } else {
-                                result.personality = [char.personality];
-                            }
-                        }
-                    } else if (Array.isArray(char.personality)) {
-                        result.personality = char.personality;
-                    } else {
-                        result.personality = null;
-                    }
-                } else {
-                    result.personality = null;
-                }
-
-                return result;
-            });
+            return characters.map(char => this.parseCharacter(char));
         } catch (error) {
             if (error instanceof NotFoundError) {
                 throw error;
@@ -428,6 +399,49 @@ class CharacterService {
             logger.error('Get project characters error:', error);
             throw new AppError('Failed to get project characters', 500);
         }
+    }
+
+    /**
+     * 通用的角色解析：personality/shotIds/等字段
+     */
+    parseCharacter(char) {
+        const result = { ...char };
+
+        // 解析 personality（字符串/JSON/数组）
+        if (char.personality) {
+            if (typeof char.personality === 'string') {
+                try {
+                    result.personality = JSON.parse(char.personality);
+                } catch (e) {
+                    if (char.personality.includes('，') || char.personality.includes(',')) {
+                        result.personality = char.personality.split(/[，,]/).map(s => s.trim()).filter(s => s);
+                    } else {
+                        result.personality = [char.personality];
+                    }
+                }
+            } else if (Array.isArray(char.personality)) {
+                result.personality = char.personality;
+            } else {
+                result.personality = null;
+            }
+        } else {
+            result.personality = null;
+        }
+
+        // 解析 shotIds
+        if (char.shotIds && typeof char.shotIds === 'string') {
+            try {
+                result.shotIds = JSON.parse(char.shotIds);
+            } catch (e) {
+                result.shotIds = [];
+            }
+        } else if (Array.isArray(char.shotIds)) {
+            result.shotIds = char.shotIds;
+        } else {
+            result.shotIds = null;
+        }
+
+        return result;
     }
 
     /**

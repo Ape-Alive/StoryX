@@ -87,6 +87,61 @@ class SystemPromptController {
         const prompts = await systemPromptService.getSystemPromptsByCategory(category);
         ResponseUtil.success(res, prompts, 'System prompts retrieved successfully');
     });
+
+    /**
+     * 创建功能提示词
+     * POST /api/system-prompts/:systemPromptId/feature-prompts
+     */
+    createFeaturePrompt = asyncHandler(async (req, res) => {
+        const { systemPromptId } = req.params;
+        const prompt = await systemPromptService.createFeaturePrompt(systemPromptId, req.body);
+        ResponseUtil.success(res, prompt, 'Feature prompt created successfully', 201);
+    });
+
+    /**
+     * 获取功能提示词列表
+     * GET /api/system-prompts/:systemPromptId/feature-prompts
+     * 可选 query: functionType
+     */
+    getFeaturePrompts = asyncHandler(async (req, res) => {
+        const { systemPromptId } = req.params;
+        const { functionType } = req.query;
+        const list = await systemPromptService.getFeaturePrompts({
+            systemPromptId,
+            functionType,
+        });
+        ResponseUtil.success(res, list, 'Feature prompts retrieved successfully');
+    });
+
+    /**
+     * 获取单个功能提示词
+     * GET /api/system-prompts/feature-prompts/:id
+     */
+    getFeaturePromptById = asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const item = await systemPromptService.getFeaturePromptById(id);
+        ResponseUtil.success(res, item, 'Feature prompt retrieved successfully');
+    });
+
+    /**
+     * 更新功能提示词
+     * PUT /api/system-prompts/feature-prompts/:id
+     */
+    updateFeaturePrompt = asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        const updated = await systemPromptService.updateFeaturePrompt(id, req.body);
+        ResponseUtil.success(res, updated, 'Feature prompt updated successfully');
+    });
+
+    /**
+     * 删除功能提示词
+     * DELETE /api/system-prompts/feature-prompts/:id
+     */
+    deleteFeaturePrompt = asyncHandler(async (req, res) => {
+        const { id } = req.params;
+        await systemPromptService.deleteFeaturePrompt(id);
+        ResponseUtil.success(res, null, 'Feature prompt deleted successfully');
+    });
 }
 
 module.exports = new SystemPromptController();

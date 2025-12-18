@@ -271,7 +271,7 @@ router.get('/tasks/:taskId', scriptController.getScriptTask);
  *   post:
  *     summary: 重新生成剧本数据结构
  *     description: 根据任务ID、项目ID、小说ID重新生成剧本数据结构
- *     tags: [Script]
+ *     tags: [Scripts]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -297,6 +297,10 @@ router.get('/tasks/:taskId', scriptController.getScriptTask);
  *               novelId:
  *                 type: string
  *                 description: 小说ID
+ *               overwrite:
+ *                 type: boolean
+ *                 default: true
+ *                 description: 是否覆盖原任务的产物（包括关联的Act、Scene、Shot等），默认true。如果为false，则生成新的UUID和关联数据
  *     responses:
  *       201:
  *         description: 重新生成任务已启动
@@ -343,7 +347,7 @@ router.post('/tasks/:taskId/regenerate', scriptController.regenerateScript);
  *   get:
  *     summary: 获取小说的所有剧幕（按章节顺序排序）
  *     description: 获取指定小说的所有剧幕，按照章节顺序排序，确保即使异步处理也不会打乱顺序
- *     tags: [Script]
+ *     tags: [Scripts]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -373,7 +377,7 @@ router.post('/tasks/:taskId/regenerate', scriptController.regenerateScript);
  *       404:
  *         description: 小说不存在
  */
-router.get('/novels/:novelId/acts', scriptController.getNovelActs);
+router.get('/:novelId/acts', scriptController.getNovelActs);
 
 module.exports = router;
 

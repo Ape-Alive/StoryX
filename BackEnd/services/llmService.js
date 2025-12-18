@@ -349,7 +349,7 @@ class LLMService {
      * 调用DeepSeek API生成结构化剧本
      */
     async callDeepSeekScriptAPI(text, apiKey, baseUrl, modelName, customPrompt = null) {
-        const url = `${baseUrl}`;
+        const url = `${baseUrl}/chat/completions`;
 
         // 使用自定义提示词或默认提示词
         const systemPrompt = customPrompt || `你是一个专业的剧本结构化助手。请将提供的小说章节内容转换为结构化的剧本格式。
@@ -475,17 +475,182 @@ class LLMService {
 
             if (response.data && response.data.choices && response.data.choices.length > 0) {
                 const content = response.data.choices[0].message.content.trim();
-                // 尝试解析JSON
-                try {
-                    return JSON.parse(content);
-                } catch (e) {
-                    // 如果解析失败，尝试提取JSON部分
-                    const jsonMatch = content.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        return JSON.parse(jsonMatch[0]);
+
+                /**
+                 * 修复JSON字符串中的常见问题（中文引号、未转义字符等）
+                 * @param {string} jsonStr - 原始JSON字符串
+                 * @returns {string} - 修复后的JSON字符串
+                 */
+                const fixJSONString = (jsonStr) => {
+                    let fixed = jsonStr;
+
+                    // 步骤1: 提取JSON对象部分（去除可能的markdown代码块标记）
+                    const codeBlockMatch = fixed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                    if (codeBlockMatch) {
+                        fixed = codeBlockMatch[1].trim();
+                    } else {
+                        // 提取第一个 { ... } 块
+                        const jsonMatch = fixed.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            fixed = jsonMatch[0];
+                        }
                     }
-                    throw new AppError('Invalid JSON response from LLM', 500);
+
+                    // 步骤2: 修复字符串值中的中文引号和未转义字符
+                    // 使用状态机方法：逐字符处理，正确处理嵌套的引号
+                    let result = '';
+                    let inString = false;
+                    let escapeNext = false;
+                    let stringStart = -1;
+
+                    for (let i = 0; i < fixed.length; i++) {
+                        const char = fixed[i];
+                        const prevChar = i > 0 ? fixed[i - 1] : '';
+
+                        if (escapeNext) {
+                            // 当前字符已被转义，直接添加
+                            result += char;
+                            escapeNext = false;
+                            continue;
+                        }
+
+                        if (char === '\\') {
+                            // 转义字符
+                            result += char;
+                            escapeNext = true;
+                            continue;
+                        }
+
+                        if (char === '"' && !escapeNext) {
+                            if (!inString) {
+                                // 字符串开始
+                                inString = true;
+                                stringStart = result.length;
+                                result += char;
+                            } else {
+                                // 字符串结束
+                                inString = false;
+                                result += char;
+                            }
+                            continue;
+                        }
+
+                        if (inString) {
+                            // 在字符串内部
+                            if (char === '"' || char === '"') {
+                                // 中文引号，需要转义
+                                result += '\\"';
+                            } else if (char === '\n' && prevChar !== '\\') {
+                                // 未转义的换行符
+                                result += '\\n';
+                            } else if (char === '\r' && prevChar !== '\\') {
+                                // 未转义的回车符
+                                result += '\\r';
+                            } else if (char === '\t' && prevChar !== '\\') {
+                                // 未转义的制表符
+                                result += '\\t';
+                            } else {
+                                result += char;
+                            }
+                        } else {
+                            // 不在字符串内部
+                            if (char === '"' || char === '"') {
+                                // 键名边界的中文引号，替换为标准引号
+                                result += '"';
+                            } else {
+                                result += char;
+                            }
+                        }
+                    }
+
+                    return result;
+                };
+
+                // 尝试多种方式解析JSON
+                let parsedData = null;
+                let lastError = null;
+
+                // 策略1: 直接解析
+                try {
+                    parsedData = JSON.parse(content);
+                    return parsedData;
+                } catch (e) {
+                    lastError = e;
+                    logger.warn('Direct JSON parse failed, trying fixJSONString', {
+                        error: e.message,
+                        contentPreview: content.substring(0, 200)
+                    });
                 }
+
+                // 策略2: 提取并修复JSON
+                try {
+                    const fixedContent = fixJSONString(content);
+                    parsedData = JSON.parse(fixedContent);
+                    logger.info('Successfully parsed JSON after fixing');
+                    return parsedData;
+                } catch (e) {
+                    lastError = e;
+                    logger.warn('Fixed JSON parse failed', {
+                        error: e.message,
+                        fixedContentPreview: fixJSONString(content).substring(0, 200)
+                    });
+                }
+
+                // 策略3: 更简单的修复（全局替换中文引号）
+                try {
+                    let cleanedContent = content;
+
+                    // 提取JSON部分
+                    const codeBlockMatch = cleanedContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                    if (codeBlockMatch) {
+                        cleanedContent = codeBlockMatch[1].trim();
+                    } else {
+                        const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            cleanedContent = jsonMatch[0];
+                        }
+                    }
+
+                    // 简单替换：将所有中文引号替换为标准引号（这可能会破坏包含中文引号的字符串值）
+                    // 但作为最后的尝试
+                    cleanedContent = cleanedContent
+                        .replace(/"/g, '"')
+                        .replace(/"/g, '"');
+
+                    parsedData = JSON.parse(cleanedContent);
+                    logger.info('Successfully parsed JSON after simple replacement');
+                    return parsedData;
+                } catch (e) {
+                    lastError = e;
+                }
+
+                // 所有策略都失败，记录详细错误信息
+                const errorMessage = lastError?.message || 'Unknown JSON parse error';
+                const errorPreview = content.substring(0, 1000);
+
+                // 尝试找到错误位置附近的上下文
+                let errorContext = errorPreview;
+                if (errorMessage.includes('_effect') || errorMessage.includes('sound_effect')) {
+                    const effectIndex = content.indexOf('_effect');
+                    if (effectIndex >= 0) {
+                        errorContext = content.substring(
+                            Math.max(0, effectIndex - 150),
+                            Math.min(content.length, effectIndex + 300)
+                        );
+                    }
+                }
+
+                logger.error('Failed to parse JSON response from DeepSeek Script API', {
+                    error: errorMessage,
+                    contentLength: content.length,
+                    errorContext: errorContext,
+                    errorStack: lastError?.stack?.substring(0, 500)
+                });
+
+                throw new AppError(
+                    `DeepSeek Script API error: ${errorMessage}. Error context: ${errorContext.substring(0, 400)}...`,
+                    500
+                );
             }
 
             throw new AppError('Invalid response from LLM API', 500);

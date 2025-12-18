@@ -279,7 +279,121 @@ class SystemPromptService {
             throw new AppError('Failed to get system prompts', 500);
         }
     }
+
+    /**
+     * 创建功能提示词
+     */
+    async createFeaturePrompt(systemPromptId, data) {
+        const prisma = getPrisma();
+        const { name, functionType, referenceWorks, referenceLinks, prompt } = data;
+
+        if (!name || !functionType || !prompt) {
+            throw new AppError('name, functionType, prompt are required', 400);
+        }
+
+        const sys = await prisma.systemPrompt.findUnique({ where: { id: systemPromptId } });
+        if (!sys) throw new NotFoundError('System prompt not found');
+
+        return prisma.featurePrompt.create({
+            data: {
+                systemPromptId,
+                name,
+                functionType,
+                referenceWorks: referenceWorks || null,
+                // 如果 referenceLinks 是空数组，设置为 null；否则如果是数组则序列化，否则设置为 null
+                referenceLinks: Array.isArray(referenceLinks)
+                    ? (referenceLinks.length > 0 ? JSON.stringify(referenceLinks) : null)
+                    : (referenceLinks || null),
+                prompt,
+            },
+        });
+    }
+
+    /**
+     * 获取功能提示词列表
+     */
+    async getFeaturePrompts(filters = {}) {
+        const prisma = getPrisma();
+        const where = {};
+        if (filters.systemPromptId) where.systemPromptId = filters.systemPromptId;
+        if (filters.functionType) where.functionType = filters.functionType;
+
+        const list = await prisma.featurePrompt.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+        });
+        return list.map(fp => ({
+            ...fp,
+            referenceLinks: fp.referenceLinks ? safeParseArray(fp.referenceLinks) : null,
+        }));
+    }
+
+    /**
+     * 获取单个功能提示词
+     */
+    async getFeaturePromptById(id) {
+        const prisma = getPrisma();
+        const item = await prisma.featurePrompt.findUnique({ where: { id } });
+        if (!item) throw new NotFoundError('Feature prompt not found');
+        return {
+            ...item,
+            referenceLinks: item.referenceLinks ? safeParseArray(item.referenceLinks) : null,
+        };
+    }
+
+    /**
+     * 更新功能提示词
+     */
+    async updateFeaturePrompt(id, data) {
+        const prisma = getPrisma();
+        // 确认存在
+        await this.getFeaturePromptById(id);
+
+        const { name, functionType, referenceWorks, referenceLinks, prompt } = data;
+        const updateData = {};
+        if (name !== undefined) updateData.name = name;
+        if (functionType !== undefined) updateData.functionType = functionType;
+        if (referenceWorks !== undefined) updateData.referenceWorks = referenceWorks || null;
+        if (referenceLinks !== undefined) {
+            // 如果 referenceLinks 是空数组、null 或 undefined，设置为 null
+            if (Array.isArray(referenceLinks) && referenceLinks.length === 0) {
+                updateData.referenceLinks = null;
+            } else if (Array.isArray(referenceLinks)) {
+                updateData.referenceLinks = JSON.stringify(referenceLinks);
+            } else {
+                updateData.referenceLinks = referenceLinks || null;
+            }
+        }
+        if (prompt !== undefined) updateData.prompt = prompt;
+
+        const updated = await prisma.featurePrompt.update({
+            where: { id },
+            data: updateData,
+        });
+        return {
+            ...updated,
+            referenceLinks: updated.referenceLinks ? safeParseArray(updated.referenceLinks) : null,
+        };
+    }
+
+    /**
+     * 删除功能提示词
+     */
+    async deleteFeaturePrompt(id) {
+        const prisma = getPrisma();
+        await this.getFeaturePromptById(id);
+        await prisma.featurePrompt.delete({ where: { id } });
+    }
 }
 
 module.exports = new SystemPromptService();
+
+function safeParseArray(val) {
+    try {
+        const parsed = JSON.parse(val);
+        return Array.isArray(parsed) ? parsed : null;
+    } catch (e) {
+        return null;
+    }
+}
 

@@ -244,5 +244,200 @@ router.get('/function/:functionKey', systemPromptController.getSystemPromptByFun
  */
 router.get('/category/:category', systemPromptController.getSystemPromptsByCategory);
 
+/**
+ * @swagger
+ * /api/system-prompts/{systemPromptId}/feature-prompts:
+ *   post:
+ *     summary: 创建功能提示词
+ *     tags: [SystemPrompts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: systemPromptId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: 关联的系统提示词ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - functionType
+ *               - prompt
+ *             properties:
+ *               name:
+ *                 type: string
+ *               functionType:
+ *                 type: string
+ *               referenceWorks:
+ *                 type: string
+ *                 description: 参考作品名称（可选）
+ *               referenceLinks:
+ *                 type: array
+ *                 nullable: true
+ *                 description: 参考链接数组（可选）
+ *                 items:
+ *                   type: string
+ *                   format: uri
+ *               prompt:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: 创建成功
+ */
+router.post(
+    '/:systemPromptId/feature-prompts',
+    [
+        body('name').notEmpty().withMessage('name is required'),
+        body('functionType').notEmpty().withMessage('functionType is required'),
+        body('prompt').notEmpty().withMessage('prompt is required'),
+        body('referenceLinks')
+            .optional({ nullable: true, checkFalsy: true })
+            .isArray()
+            .withMessage('referenceLinks must be array'),
+        body('referenceLinks.*')
+            .optional({ nullable: true, checkFalsy: true })
+            .isURL()
+            .withMessage('referenceLinks must contain valid URLs'),
+    ],
+    validate,
+    systemPromptController.createFeaturePrompt
+);
+
+/**
+ * @swagger
+ * /api/system-prompts/{systemPromptId}/feature-prompts:
+ *   get:
+ *     summary: 获取功能提示词列表
+ *     tags: [SystemPrompts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: systemPromptId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: query
+ *         name: functionType
+ *         schema:
+ *           type: string
+ *         description: 按功能类型筛选
+ *     responses:
+ *       200:
+ *         description: 成功
+ */
+router.get('/:systemPromptId/feature-prompts', systemPromptController.getFeaturePrompts);
+
+/**
+ * @swagger
+ * /api/system-prompts/feature-prompts/{id}:
+ *   get:
+ *     summary: 获取单个功能提示词
+ *     tags: [SystemPrompts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: 成功
+ */
+router.get('/feature-prompts/:id', systemPromptController.getFeaturePromptById);
+
+/**
+ * @swagger
+ * /api/system-prompts/feature-prompts/{id}:
+ *   put:
+ *     summary: 更新功能提示词
+ *     tags: [SystemPrompts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: 名称（可选）
+ *               functionType:
+ *                 type: string
+ *                 description: 功能类型（可选）
+ *               referenceWorks:
+ *                 type: string
+ *                 description: 参考作品名称（可选）
+ *               referenceLinks:
+ *                 type: array
+ *                 nullable: true
+ *                 description: 参考链接数组（可选）
+ *                 items:
+ *                   type: string
+ *                   format: uri
+ *               prompt:
+ *                 type: string
+ *                 description: 提示词内容（可选）
+ *     responses:
+ *       200:
+ *         description: 更新成功
+ */
+router.put(
+    '/feature-prompts/:id',
+    [
+        body('referenceLinks')
+            .optional({ nullable: true, checkFalsy: true })
+            .isArray()
+            .withMessage('referenceLinks must be array'),
+        body('referenceLinks.*')
+            .optional({ nullable: true, checkFalsy: true })
+            .isURL()
+            .withMessage('referenceLinks must contain valid URLs'),
+    ],
+    validate,
+    systemPromptController.updateFeaturePrompt
+);
+
+/**
+ * @swagger
+ * /api/system-prompts/feature-prompts/{id}:
+ *   delete:
+ *     summary: 删除功能提示词
+ *     tags: [SystemPrompts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ */
+router.delete('/feature-prompts/:id', systemPromptController.deleteFeaturePrompt);
+
 module.exports = router;
 

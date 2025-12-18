@@ -170,6 +170,7 @@ class NovelService {
                         id: chapterId,
                         novelId,
                         title: chapterData.title,
+                        content: null, // 内容存储在文件中，数据库不存储
                         contentPath,
                         order: chapterData.order,
                         wordCount: chapterData.wordCount,
@@ -645,6 +646,7 @@ class NovelService {
                         id: chapterId,
                         novelId,
                         title: chapterData.title,
+                        content: null, // 内容存储在文件中，数据库不存储
                         contentPath,
                         order: chapterData.order,
                         wordCount: chapterData.wordCount,

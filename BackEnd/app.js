@@ -20,6 +20,7 @@ const scriptRoutes = require('./routes/scriptRoutes');
 const systemPromptRoutes = require('./routes/systemPromptRoutes');
 const characterDrawRoutes = require('./routes/characterDrawRoutes');
 const sceneRoutes = require('./routes/sceneRoutes');
+const mediaRoutes = require('./routes/mediaRoutes');
 
 // Initialize Express app
 const app = express();
@@ -107,6 +108,7 @@ app.use('/api/novels', scriptRoutes);
 app.use('/api/script', scriptRoutes);
 app.use('/api/system-prompts', systemPromptRoutes);
 app.use('/api/scenes', sceneRoutes);
+app.use('/api/media', mediaRoutes);
 
 // 404 handler
 app.use((req, res) => {

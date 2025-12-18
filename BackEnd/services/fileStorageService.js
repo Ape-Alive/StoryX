@@ -3,6 +3,7 @@ const FormData = require('form-data');
 const fs = require('fs').promises;
 const path = require('path');
 const { HttpsProxyAgent } = require('https-proxy-agent');
+const util = require('util');
 const logger = require('../utils/logger');
 const { AppError } = require('../utils/errors');
 const config = require('../config');
@@ -53,15 +54,72 @@ class FileStorageService {
     }
 
     /**
-     * 从 URL 下载文件到本地
+     * 提取安全的错误信息，避免 JSON.stringify 循环引用
+     */
+    safeErrorMessage(error) {
+        if (!error) return 'Unknown error';
+        if (error.message) return error.message;
+        try {
+            return util.inspect(error, { depth: 2, maxStringLength: 300 });
+        } catch (e) {
+            return 'Unknown error';
+        }
+    }
+
+    /**
+     * 从 URL 下载文件到本地（带重试机制）
      * @param {string} url - 文件 URL
      * @param {string} localPath - 本地存储路径（相对路径或绝对路径）
-     * @param {Object} options - 选项 { filename, timeout, headers }
+     * @param {Object} options - 选项 { filename, timeout, headers, maxRetries, retryDelay }
      * @returns {Promise<Object>} - { localPath, absolutePath, size, mimeType }
      */
     async downloadFile(url, localPath, options = {}) {
+        const {
+            filename,
+            timeout = 60000, // 增加到60秒
+            headers = {},
+            maxRetries = 3,
+            retryDelay = 2000
+        } = options;
+
+        let lastError;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await this._downloadFileOnce(url, localPath, { filename, timeout, headers });
+            } catch (error) {
+                lastError = error;
+                const errorMsg = this.safeErrorMessage(error);
+                const isNetworkError = errorMsg.includes('socket') ||
+                                      errorMsg.includes('ECONNRESET') ||
+                                      errorMsg.includes('ETIMEDOUT') ||
+                                      errorMsg.includes('TLS') ||
+                                      errorMsg.includes('network') ||
+                                      error.code === 'ECONNRESET' ||
+                                      error.code === 'ETIMEDOUT' ||
+                                      error.code === 'ENOTFOUND';
+
+                if (isNetworkError && attempt < maxRetries) {
+                    logger.warn(`Download attempt ${attempt}/${maxRetries} failed for ${url}, retrying in ${retryDelay}ms...`, errorMsg);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay * attempt)); // 指数退避
+                    continue;
+                }
+                // 如果不是网络错误或已达到最大重试次数，直接抛出
+                throw error;
+            }
+        }
+
+        // 所有重试都失败
+        const msg = this.safeErrorMessage(lastError);
+        logger.error(`Failed to download file from ${url} after ${maxRetries} attempts:`, msg);
+        throw new AppError(`Failed to download file: ${msg}`, 500);
+    }
+
+    /**
+     * 单次下载尝试（内部方法）
+     */
+    async _downloadFileOnce(url, localPath, options = {}) {
         try {
-            const { filename, timeout = 30000, headers = {} } = options;
+            const { filename, timeout = 60000, headers = {} } = options;
 
             // 解析本地路径
             let absolutePath;
@@ -89,7 +147,7 @@ class FileStorageService {
 
             logger.info(`Downloading file from ${url} to ${absolutePath}`);
 
-            // 下载文件
+            // 下载文件（增加超时和连接配置）
             const response = await axios({
                 method: 'get',
                 url: url,
@@ -100,6 +158,9 @@ class FileStorageService {
                     ...headers,
                 },
                 ...this.getProxyConfig(),
+                // 增加连接配置以提高稳定性
+                maxRedirects: 5,
+                validateStatus: (status) => status < 500, // 允许重定向
             });
 
             // 获取文件大小和 MIME 类型
@@ -129,32 +190,30 @@ class FileStorageService {
                 mimeType: contentType,
             };
         } catch (error) {
-            logger.error(`Failed to download file from ${url}:`, error);
-            throw new AppError(`Failed to download file: ${error.message}`, 500);
+            const msg = this.safeErrorMessage(error);
+            // 重新抛出错误，让重试机制处理
+            throw error;
         }
     }
 
     /**
-     * 上传文件到 Catbox
+     * 上传文件到 Catbox（带简单重试，缓解 EPIPE/ECONNRESET）
      * @param {string} filePath - 本地文件路径（绝对路径）
      * @param {Object} options - 选项 { filename, mimeType }
      * @returns {Promise<string>} - 公链 URL
      */
     async uploadToCatbox(filePath, options = {}) {
-        try {
-            const { filename, mimeType } = options;
+        const { filename, mimeType, timeout } = options;
 
-            if (!this.catboxUserHash) {
-                throw new AppError('Catbox user hash is not configured', 500);
-            }
+        if (!this.catboxUserHash) {
+            throw new AppError('Catbox user hash is not configured', 500);
+        }
 
-            // 读取文件
-            const fileBuffer = await fs.readFile(filePath);
-            const finalFilename = filename || path.basename(filePath);
+        // 读取文件
+        const fileBuffer = await fs.readFile(filePath);
+        const finalFilename = filename || path.basename(filePath);
 
-            logger.info(`Uploading file to Catbox: ${finalFilename}`);
-
-            // 构建 FormData
+        const formBuilder = () => {
             const form = new FormData();
             form.append('reqtype', 'fileupload');
             form.append('userhash', this.catboxUserHash);
@@ -162,36 +221,52 @@ class FileStorageService {
                 filename: finalFilename,
                 contentType: mimeType || 'application/octet-stream',
             });
+            return form;
+        };
 
-            // 发送请求
-            const response = await axios.post(this.catboxApiUrl, form, {
-                headers: {
-                    ...form.getHeaders(),
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Origin': 'https://catbox.moe',
-                    'Referer': 'https://catbox.moe/',
-                    'Accept': '*/*',
-                    'Connection': 'keep-alive',
-                },
-                ...this.getProxyConfig(),
-            });
+        const maxRetries = 3;
+        const baseDelay = 1000;
+        const uploadTimeout = timeout || config.fileStorage?.uploadTimeout || 60000; // 默认 60s
 
-            const resultUrl = response.data;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            const form = formBuilder();
+            try {
+                logger.info(`Uploading file to Catbox (attempt ${attempt}/${maxRetries}): ${finalFilename}`);
+                const response = await axios.post(this.catboxApiUrl, form, {
+                    headers: {
+                        ...form.getHeaders(),
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Origin': 'https://catbox.moe',
+                        'Referer': 'https://catbox.moe/',
+                        'Accept': '*/*',
+                        'Connection': 'keep-alive',
+                    },
+                    timeout: uploadTimeout,
+                    ...this.getProxyConfig(),
+                });
 
-            if (typeof resultUrl === 'string' && resultUrl.startsWith('http')) {
-                logger.info(`File uploaded to Catbox successfully: ${resultUrl}`);
-                return resultUrl;
-            } else {
-                // Catbox 有时会返回 HTML 错误页
-                logger.error('Catbox returned invalid response:', resultUrl.toString().substring(0, 200));
-                throw new AppError('Catbox returned invalid response', 500);
+                const resultUrl = response.data;
+                if (typeof resultUrl === 'string' && resultUrl.startsWith('http')) {
+                    logger.info(`File uploaded to Catbox successfully: ${resultUrl}`);
+                    return resultUrl;
+                } else {
+                    logger.error('Catbox returned invalid response:', typeof resultUrl === 'string' ? resultUrl.substring(0, 200) : this.safeErrorMessage(resultUrl));
+                    throw new AppError('Catbox returned invalid response', 500);
+                }
+            } catch (error) {
+                const msg = this.safeErrorMessage(error);
+                const isRetryable = ['EPIPE', 'ECONNRESET', 'ETIMEDOUT', 'ECONNABORTED'].includes(error?.code);
+                logger.error(`Failed to upload file to Catbox (attempt ${attempt}): ${msg}`);
+                if (error?.response?.data) {
+                    logger.error('Catbox error response:', this.safeErrorMessage(error.response.data));
+                }
+                if (attempt >= maxRetries || !isRetryable) {
+                    throw new AppError(`Failed to upload to Catbox: ${msg}`, 500);
+                }
+                // backoff
+                const delay = baseDelay * Math.pow(2, attempt - 1);
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
-        } catch (error) {
-            logger.error(`Failed to upload file to Catbox:`, error);
-            if (error.response) {
-                logger.error('Catbox error response:', error.response.data);
-            }
-            throw new AppError(`Failed to upload to Catbox: ${error.message}`, 500);
         }
     }
 
@@ -233,6 +308,7 @@ class FileStorageService {
                     publicUrl = await this.uploadToCatbox(downloadResult.absolutePath, {
                         filename: path.basename(downloadResult.absolutePath),
                         mimeType: downloadResult.mimeType,
+                        timeout: options.uploadTimeout || options.timeout, // 支持单独配置上传超时
                     });
                 } else {
                     logger.warn(`Unsupported hosting provider: ${hostingProvider}, skipping upload`);
@@ -247,35 +323,98 @@ class FileStorageService {
                 mimeType: downloadResult.mimeType,
             };
         } catch (error) {
-            logger.error(`Failed to download and upload file:`, error);
-            throw error;
+            const msg = this.safeErrorMessage(error);
+            logger.error(`Failed to download and upload file: ${msg}`);
+            throw new AppError(`Failed to download and upload file: ${msg}`, error.statusCode || 500);
         }
     }
 
     /**
-     * 方式2：直接下载 Buffer 然后上传到 Catbox（不保存到本地）
+     * 方式2：直接下载 Buffer 然后上传到 Catbox（不保存到本地，带重试机制）
      * @param {string} url - 文件的远程URL
      * @param {Object} options - 选项
      * @param {string} [options.filename] - 上传到Catbox的文件名，如果未提供则从URL解析或生成UUID
      * @param {string} [options.mimeType] - 文件的MIME类型，如果未提供则从响应头获取
-     * @param {number} [options.timeout=30000] - 下载超时时间（毫秒）
+     * @param {number} [options.timeout=60000] - 下载超时时间（毫秒）
      * @param {Object} [options.headers={}] - 自定义请求头
+     * @param {number} [options.maxRetries=3] - 最大重试次数
+     * @param {number} [options.retryDelay=2000] - 重试延迟（毫秒）
      * @returns {Promise<{publicUrl: string, size: number, mimeType: string, buffer: Buffer}>} - 上传结果
      */
     async downloadBufferAndUpload(url, options = {}) {
-        const { filename, mimeType, timeout = 30000, headers = {} } = options;
+        const {
+            filename,
+            mimeType,
+            timeout = 60000, // 增加到60秒
+            uploadTimeout,   // 上传超时
+            headers = {},
+            maxRetries = 3,
+            retryDelay = 2000,
+        } = options;
 
         if (!this.catboxUserHash) {
             throw new AppError('Catbox user hash is not configured.', 500);
         }
 
+        let lastError;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await this._downloadBufferAndUploadOnce(url, {
+                    filename,
+                    mimeType,
+                    timeout,
+                    uploadTimeout,
+                    headers,
+                });
+            } catch (error) {
+                lastError = error;
+                const errorMsg = this.safeErrorMessage(error);
+                const isNetworkError = errorMsg.includes('socket') ||
+                                      errorMsg.includes('ECONNRESET') ||
+                                      errorMsg.includes('ETIMEDOUT') ||
+                                      errorMsg.includes('TLS') ||
+                                      errorMsg.includes('network') ||
+                                      error.code === 'ECONNRESET' ||
+                                      error.code === 'ETIMEDOUT' ||
+                                      error.code === 'ENOTFOUND';
+
+                if (isNetworkError && attempt < maxRetries) {
+                    logger.warn(`Download buffer attempt ${attempt}/${maxRetries} failed for ${url}, retrying in ${retryDelay * attempt}ms...`, errorMsg);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay * attempt)); // 指数退避
+                    continue;
+                }
+                // 如果不是网络错误或已达到最大重试次数，直接抛出
+                throw error;
+            }
+        }
+
+        // 所有重试都失败
+        const msg = this.safeErrorMessage(lastError);
+        logger.error(`Failed to download buffer and upload from ${url} after ${maxRetries} attempts:`, msg);
+        throw new AppError(`Failed to download buffer and upload: ${msg}`, 500);
+    }
+
+    /**
+     * 单次下载 Buffer 并上传尝试（内部方法）
+     */
+    async _downloadBufferAndUploadOnce(url, options = {}) {
+        const {
+            filename,
+            mimeType,
+            timeout = 60000,
+            uploadTimeout,
+            headers = {},
+        } = options;
+
         try {
-            // 下载文件为 Buffer
+            // 下载文件为 Buffer（增加连接配置）
             const response = await axios.get(url, {
                 responseType: 'arraybuffer',
                 timeout,
                 headers,
                 ...this.getProxyConfig(),
+                maxRedirects: 5,
+                validateStatus: (status) => status < 500,
             });
 
             const fileBuffer = Buffer.from(response.data);
@@ -311,6 +450,7 @@ class FileStorageService {
                     'Accept': '*/*',
                     'Connection': 'keep-alive',
                 },
+                timeout: uploadTimeout || config.fileStorage?.uploadTimeout || 60000,
                 ...this.getProxyConfig(),
             });
 
@@ -328,8 +468,8 @@ class FileStorageService {
                 throw new AppError(`Catbox returned an invalid URL: ${publicUrl.toString().substring(0, 200)}`, 500);
             }
         } catch (error) {
-            logger.error(`Failed to download buffer and upload from ${url}:`, error);
-            throw new AppError(`Failed to download buffer and upload: ${error.message}`, 500);
+            // 重新抛出错误，让重试机制处理
+            throw error;
         }
     }
 

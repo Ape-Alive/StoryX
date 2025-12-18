@@ -70,6 +70,15 @@ if (process.env.NODE_ENV !== 'production') {
  *                 default: download_upload
  *                 description: 存储方式，download_upload=下载到本地再上传到Catbox，buffer_upload=直接下载Buffer然后上传到Catbox
  *                 example: "download_upload"
+ *               featurePromptId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: 功能提示词ID（FeaturePrompt表的id），用于获取功能提示词
+ *                 example: "feature-prompt-uuid"
+ *               genreStyle:
+ *                 type: string
+ *                 description: 题材风格（字符串类型），如"古风"、"现代"、"科幻"等
+ *                 example: "古风"
  *     responses:
  *       201:
  *         description: 抽卡任务已创建
@@ -113,6 +122,8 @@ router.post(
         body('drawType').optional().isIn(['image', 'video']).withMessage('drawType must be image or video'),
         body('apiConfig').optional().isObject().withMessage('apiConfig must be an object'),
         body('storageMode').optional().isIn(['download_upload', 'buffer_upload']).withMessage('storageMode must be download_upload or buffer_upload'),
+        body('featurePromptId').optional().isUUID().withMessage('featurePromptId must be a valid UUID'),
+        body('genreStyle').optional().isString().withMessage('genreStyle must be a string'),
     ],
     validate,
     characterDrawController.startBatchDraw

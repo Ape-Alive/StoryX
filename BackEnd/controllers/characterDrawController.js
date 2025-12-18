@@ -9,7 +9,7 @@ class CharacterDrawController {
      * POST /api/characters/draw
      */
     startBatchDraw = asyncHandler(async (req, res) => {
-        const { characterIds, projectId, drawType, apiConfig, storageMode } = req.body;
+        const { characterIds, projectId, drawType, apiConfig, storageMode, featurePromptId, genreStyle } = req.body;
         const userId = req.user.id;
 
         if (!characterIds || !Array.isArray(characterIds) || characterIds.length === 0) {
@@ -36,6 +36,8 @@ class CharacterDrawController {
                 drawType: drawType || 'image',
                 apiConfig: apiConfig || {}, // 自定义AI API请求参数
                 storageMode: storageMode || 'download_upload', // 存储方式
+                featurePromptId: featurePromptId || null, // 功能提示词ID
+                genreStyle: genreStyle || null, // 题材风格
             }
         );
 

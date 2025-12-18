@@ -1,691 +1,605 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统提示词管理 - StoryX</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>系统提示词管理</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #667eea;
+            --primary-hover: #5568d3;
+            --danger: #e74c3c;
+            --border: #e9ecef;
+            --bg: #f8f9fa;
         }
-
+        * { box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f4f6f8;
+            color: #333;
         }
-
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
+            padding: 24px;
         }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .login-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-        }
-
-        .login-section h2 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #555;
-            font-weight: 500;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #218838;
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .user-info {
-            background: #e7f3ff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .user-info.active {
-            display: block;
-        }
-
-        .user-info span {
-            color: #667eea;
-            font-weight: 500;
-        }
-
-        .prompts-section {
-            display: none;
-        }
-
-        .prompts-section.active {
-            display: block;
-        }
-
-        .prompts-list {
-            margin-bottom: 30px;
-        }
-
-        .prompt-card {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            transition: all 0.3s;
-        }
-
-        .prompt-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .prompt-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .prompt-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .prompt-meta {
-            display: flex;
-            gap: 15px;
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-
-        .prompt-meta span {
-            background: #e9ecef;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .prompt-description {
-            color: #666;
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-
-        .prompt-content {
-            background: white;
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #e9ecef;
-            max-height: 200px;
-            overflow-y: auto;
-            font-size: 13px;
-            color: #555;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            margin-bottom: 15px;
-        }
-
-        .edit-form {
-            display: none;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            border: 2px solid #667eea;
-            margin-top: 15px;
-        }
-
-        .edit-form.active {
-            display: block;
-        }
-
-        .edit-form textarea {
-            width: 100%;
-            min-height: 300px;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 13px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            resize: vertical;
-            line-height: 1.6;
-        }
-
-        .edit-form textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .alert {
-            padding: 12px 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .alert.active {
-            display: block;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-
-        .empty-state svg {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 500;
-        }
-
-        .badge-active {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge-inactive {
-            background: #f8d7da;
-            color: #721c24;
-        }
+        h1 { display: flex; justify-content: space-between; align-items: center; margin: 0 0 16px 0; }
+        .auth { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+        .auth input { padding: 8px; border: 1px solid var(--border); border-radius: 4px; }
+        .auth button { padding: 8px 14px; border: none; border-radius: 4px; cursor: pointer; background: var(--primary); color: #fff; }
+        .auth .logout { background: #6c757d; }
+        .alert { display: none; padding: 10px 14px; border-radius: 4px; margin-bottom: 12px; }
+        .alert.show { display: block; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .tabs { display: flex; gap: 8px; margin: 12px 0; }
+        .tab { padding: 10px 14px; border: 1px solid var(--border); background: #fff; cursor: pointer; border-radius: 6px; }
+        .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .toolbar { display: flex; gap: 8px; align-items: center; }
+        .btn { padding: 8px 12px; border: 1px solid var(--border); background: #fff; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
+        th { background: #fafafa; }
+        .loading { padding: 12px; text-align: center; color: #666; }
+        .badge { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-on { background: #d4edda; color: #155724; }
+        .badge-off { background: #f8d7da; color: #721c24; }
+        .actions { display: flex; gap: 6px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; padding: 16px; width: 480px; max-width: calc(100% - 32px); box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .modal-content h3 { margin: 0 0 12px; }
+        .form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+        .form-group input, .form-group textarea, .form-group select { padding: 8px; border: 1px solid var(--border); border-radius: 4px; }
+        textarea { resize: vertical; min-height: 100px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🎯 系统提示词管理</h1>
-            <p>管理和配置 AI 功能的系统提示词</p>
+        <h1>
+            <span>系统提示词管理</span>
+            <span id="userInfo" style="font-size: 14px; color: #666;"></span>
+        </h1>
+
+        <div class="auth" id="authSection">
+            <input type="email" id="emailInput" placeholder="邮箱" />
+            <input type="password" id="passwordInput" placeholder="密码" />
+            <button id="loginBtn">登录</button>
+            <button id="logoutBtn" class="logout" style="display:none;">退出</button>
         </div>
 
-        <div class="content">
-            <!-- 登录区域 -->
-            <div class="login-section" id="loginSection">
-                <h2>登录</h2>
+        <div id="alert" class="alert"></div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="system">系统提示词</button>
+            <button class="tab" data-tab="feature">功能提示词</button>
+        </div>
+
+        <!-- 系统提示词 -->
+        <div id="systemTab" class="card">
+            <div class="card-header">
+                <div>系统提示词列表</div>
+                <div class="toolbar">
+                    <button class="btn" data-action="open-system-modal">+ 添加</button>
+                    <button class="btn" data-action="refresh-system">刷新</button>
+                </div>
+            </div>
+            <div id="systemLoading" class="loading">加载中...</div>
+            <table id="systemTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>functionKey</th>
+                        <th>分类</th>
+                        <th>状态</th>
+                        <th>版本</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="systemTbody"></tbody>
+            </table>
+        </div>
+
+        <!-- 功能提示词 -->
+        <div id="featureTab" class="card" style="display:none;">
+            <div class="card-header">
+                <div>功能提示词列表</div>
+                <div class="toolbar">
+                    <select id="fpSystemPromptSelect" style="width:200px;">
+                        <option value="">选择系统提示词</option>
+                    </select>
+                    <button class="btn" data-action="open-feature-modal">+ 添加</button>
+                    <button class="btn" data-action="refresh-feature">刷新</button>
+                </div>
+            </div>
+            <div id="featureLoading" class="loading">加载中...</div>
+            <table id="featureTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>功能类型</th>
+                        <th>SystemPromptId</th>
+                        <th>参考作品</th>
+                        <th>参考链接</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="featureTbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 系统提示词模态 -->
+    <div id="systemModal" class="modal">
+        <div class="modal-content">
+            <h3 id="systemModalTitle">新增系统提示词</h3>
+            <form id="systemForm">
+                <input type="hidden" id="systemId" />
                 <div class="form-group">
-                    <label for="email">邮箱</label>
-                    <input type="email" id="email" placeholder="请输入邮箱" value="test@example.com">
+                    <label>名称 *</label>
+                    <input type="text" id="systemName" required />
                 </div>
                 <div class="form-group">
-                    <label for="password">密码</label>
-                    <input type="password" id="password" placeholder="请输入密码" value="123456">
+                    <label>functionKey *</label>
+                    <input type="text" id="systemFunctionKey" required />
                 </div>
-                <button class="btn btn-primary" id="loginBtn">登录</button>
-            </div>
-
-            <!-- 用户信息 -->
-            <div class="user-info" id="userInfo">
-                <span>已登录用户：</span><span id="userEmail"></span>
-                <button class="btn btn-secondary" id="logoutBtn" style="float: right; padding: 5px 15px; font-size: 12px;">退出登录</button>
-            </div>
-
-            <!-- 提示信息 -->
-            <div class="alert" id="alert"></div>
-
-            <!-- 提示词列表 -->
-            <div class="prompts-section" id="promptsSection">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2>系统提示词列表</h2>
-                    <button class="btn btn-primary" id="refreshBtn">刷新列表</button>
+                <div class="form-group">
+                    <label>分类</label>
+                    <input type="text" id="systemCategory" />
                 </div>
-                <div class="prompts-list" id="promptsList">
-                    <div class="loading">加载中...</div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="systemDescription"></textarea>
                 </div>
-            </div>
+                <div class="form-group">
+                    <label>提示词内容 *</label>
+                    <textarea id="systemPrompt" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>是否启用</label>
+                    <select id="systemIsActive">
+                        <option value="true">启用</option>
+                        <option value="false">禁用</option>
+                    </select>
+                </div>
+                <div class="form-actions" style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button type="button" class="btn" data-action="close-system-modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 功能提示词模态 -->
+    <div id="featureModal" class="modal">
+        <div class="modal-content">
+            <h3 id="featureModalTitle">新增功能提示词</h3>
+            <form id="featureForm">
+                <input type="hidden" id="featureId" />
+                <div class="form-group">
+                    <label>系统提示词ID *</label>
+                    <select id="featureSystemPromptId" required>
+                        <option value="">请选择系统提示词</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>名称 *</label>
+                    <input type="text" id="featureName" required />
+                </div>
+                <div class="form-group">
+                    <label>功能类型 *</label>
+                    <input type="text" id="featureFunctionType" required />
+                </div>
+                <div class="form-group">
+                    <label>参考作品名称</label>
+                    <input type="text" id="featureReferenceWorks" />
+                </div>
+                <div class="form-group">
+                    <label>参考链接（逗号分隔）</label>
+                    <input type="text" id="featureReferenceLinks" />
+                </div>
+                <div class="form-group">
+                    <label>提示词内容 *</label>
+                    <textarea id="featurePrompt" required></textarea>
+                </div>
+                <div class="form-actions" style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button type="button" class="btn" data-action="close-feature-modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        const API_BASE_URL = 'http://localhost:3000/api';
-        let authToken = localStorage.getItem('authToken') || '';
-        let currentUser = null;
+        const API_BASE = window.location.origin;
+        let token = localStorage.getItem('token') || '';
 
-        // DOM 元素
-        const loginSection = document.getElementById('loginSection');
-        const userInfo = document.getElementById('userInfo');
-        const userEmail = document.getElementById('userEmail');
-        const promptsSection = document.getElementById('promptsSection');
-        const promptsList = document.getElementById('promptsList');
-        const alert = document.getElementById('alert');
+        // DOM
         const loginBtn = document.getElementById('loginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
-        const refreshBtn = document.getElementById('refreshBtn');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const userInfo = document.getElementById('userInfo');
+        const alertBox = document.getElementById('alert');
+        const tabs = document.querySelectorAll('.tab');
+        const systemTab = document.getElementById('systemTab');
+        const featureTab = document.getElementById('featureTab');
+        const systemLoading = document.getElementById('systemLoading');
+        const featureLoading = document.getElementById('featureLoading');
+        const systemTable = document.getElementById('systemTable');
+        const featureTable = document.getElementById('featureTable');
+        const systemTbody = document.getElementById('systemTbody');
+        const featureTbody = document.getElementById('featureTbody');
+        const fpSystemPromptSelect = document.getElementById('fpSystemPromptSelect');
+
+        const systemModal = document.getElementById('systemModal');
+        const systemForm = document.getElementById('systemForm');
+        const systemModalTitle = document.getElementById('systemModalTitle');
+        const systemId = document.getElementById('systemId');
+        const systemName = document.getElementById('systemName');
+        const systemFunctionKey = document.getElementById('systemFunctionKey');
+        const systemCategory = document.getElementById('systemCategory');
+        const systemDescription = document.getElementById('systemDescription');
+        const systemPrompt = document.getElementById('systemPrompt');
+        const systemIsActive = document.getElementById('systemIsActive');
+
+        const featureModal = document.getElementById('featureModal');
+        const featureForm = document.getElementById('featureForm');
+        const featureModalTitle = document.getElementById('featureModalTitle');
+        const featureId = document.getElementById('featureId');
+        const featureSystemPromptId = document.getElementById('featureSystemPromptId');
+        const featureName = document.getElementById('featureName');
+        const featureFunctionType = document.getElementById('featureFunctionType');
+        const featureReferenceWorks = document.getElementById('featureReferenceWorks');
+        const featureReferenceLinks = document.getElementById('featureReferenceLinks');
+        const featurePrompt = document.getElementById('featurePrompt');
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('页面加载完成');
-
-            // 检查元素是否存在
-            if (!loginBtn) {
-                console.error('登录按钮未找到');
-                return;
-            }
-
-            console.log('绑定事件监听器');
-            loginBtn.addEventListener('click', (e) => {
-                console.log('登录按钮被点击');
-                e.preventDefault();
-                handleLogin();
-            });
-
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', handleLogout);
-            }
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', loadPrompts);
-            }
-
-            if (authToken) {
-                checkAuth();
-            } else {
-                showLogin();
+            bindGlobalEvents();
+            bindForms();
+            checkAuth();
+            if (token) {
+                loadSystemPrompts();
+                loadFeaturePrompts();
             }
         });
 
-        // 显示提示信息
-        function showAlert(message, type = 'success') {
-            alert.textContent = message;
-            alert.className = `alert alert-${type} active`;
-            setTimeout(() => {
-                alert.classList.remove('active');
-            }, 5000);
+        function bindGlobalEvents() {
+            // 登录/退出
+            loginBtn.addEventListener('click', onLogin);
+            logoutBtn.addEventListener('click', onLogout);
+
+            // Tab 切换
+            tabs.forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
+
+            // 选择系统提示词后自动加载功能提示词
+            fpSystemPromptSelect.addEventListener('change', () => loadFeaturePrompts());
+
+            // 工具栏事件委托
+            document.body.addEventListener('click', (e) => {
+                const action = e.target.getAttribute('data-action');
+                if (!action) return;
+                if (action === 'refresh-system') loadSystemPrompts();
+                if (action === 'open-system-modal') openSystemModal();
+                if (action === 'close-system-modal') closeSystemModal();
+                if (action === 'refresh-feature') loadFeaturePrompts();
+                if (action === 'open-feature-modal') openFeatureModal();
+                if (action === 'close-feature-modal') closeFeatureModal();
+            });
+
+            // 列表操作委托
+            systemTbody.addEventListener('click', (e) => {
+                const action = e.target.getAttribute('data-action');
+                const id = e.target.getAttribute('data-id');
+                if (!action || !id) return;
+                if (action === 'edit-system') editSystem(id);
+                if (action === 'del-system') deleteSystem(id);
+            });
+
+            featureTbody.addEventListener('click', (e) => {
+                const action = e.target.getAttribute('data-action');
+                const id = e.target.getAttribute('data-id');
+                if (!action || !id) return;
+                if (action === 'edit-feature') editFeature(id);
+                if (action === 'del-feature') deleteFeature(id);
+            });
         }
 
-        // API 请求
-        async function apiRequest(url, options = {}) {
-            const defaultOptions = {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            };
-
-            if (authToken) {
-                defaultOptions.headers['Authorization'] = `Bearer ${authToken}`;
-            }
-
-            const finalOptions = { ...defaultOptions, ...options };
-            if (options.body && typeof options.body === 'object') {
-                finalOptions.body = JSON.stringify(options.body);
-            }
-
-            const fullUrl = `${API_BASE_URL}${url}`;
-            console.log('API 请求:', fullUrl, finalOptions);
-
-            try {
-                const response = await fetch(fullUrl, finalOptions);
-                console.log('响应状态:', response.status, response.statusText);
-
-                let data;
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    data = await response.json();
-                } else {
-                    const text = await response.text();
-                    console.error('非JSON响应:', text);
-                    throw new Error('服务器返回了非JSON格式的响应');
-                }
-
-                console.log('响应数据:', data);
-
-                if (!response.ok) {
-                    throw new Error(data.message || `请求失败 (${response.status})`);
-                }
-
-                return data;
-            } catch (error) {
-                console.error('API Error:', error);
-                if (error.message) {
-                    throw error;
-                } else {
-                    throw new Error('网络请求失败，请检查服务器是否运行');
-                }
-            }
+        function bindForms() {
+            systemForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await saveSystemPrompt();
+            });
+            featureForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await saveFeaturePrompt();
+            });
         }
 
-        // 登录
-        async function handleLogin() {
-            console.log('handleLogin 被调用');
-
+        // 认证
+        async function onLogin() {
             const email = emailInput.value.trim();
             const password = passwordInput.value.trim();
-
-            console.log('邮箱:', email, '密码长度:', password.length);
-
-            if (!email || !password) {
-                showAlert('请输入邮箱和密码', 'error');
-                return;
-            }
-
+            if (!email || !password) return showAlert('请输入邮箱和密码', 'error');
             loginBtn.disabled = true;
-            loginBtn.textContent = '登录中...';
-
             try {
-                console.log('发送登录请求...');
-                const data = await apiRequest('/auth/login', {
-                    method: 'POST',
-                    body: { email, password },
-                });
-
-                console.log('登录成功:', data);
-                authToken = data.data.token;
-                currentUser = data.data.user;
-                localStorage.setItem('authToken', authToken);
-
-                showAlert('登录成功！', 'success');
-                showPrompts();
-            } catch (error) {
-                console.error('登录错误:', error);
-                showAlert(error.message || '登录失败，请检查邮箱和密码', 'error');
+                const res = await api('/api/auth/login', 'POST', { email, password });
+                token = res.token;
+                localStorage.setItem('token', token);
+                userInfo.textContent = email;
+                document.getElementById('authSection').style.display = 'none';
+                logoutBtn.style.display = 'inline-block';
+                await loadSystemPrompts();
+                await loadFeaturePrompts();
+                showAlert('登录成功', 'success');
+            } catch (err) {
+                showAlert(err.message || '登录失败', 'error');
             } finally {
                 loginBtn.disabled = false;
-                loginBtn.textContent = '登录';
             }
         }
 
-        // 退出登录
-        function handleLogout() {
-            authToken = '';
-            currentUser = null;
-            localStorage.removeItem('authToken');
-            showLogin();
-            showAlert('已退出登录', 'success');
+        function onLogout() {
+            token = '';
+            localStorage.removeItem('token');
+            document.getElementById('authSection').style.display = 'flex';
+            logoutBtn.style.display = 'none';
+            userInfo.textContent = '';
+            showAlert('已退出', 'success');
         }
 
-        // 检查认证状态
-        async function checkAuth() {
-            try {
-                const data = await apiRequest('/auth/me');
-                currentUser = data.data;
-                showPrompts();
-            } catch (error) {
-                showLogin();
-                localStorage.removeItem('authToken');
-                authToken = '';
+        function checkAuth() {
+            if (token) {
+                document.getElementById('authSection').style.display = 'none';
+                logoutBtn.style.display = 'inline-block';
             }
         }
 
-        // 显示登录界面
-        function showLogin() {
-            loginSection.style.display = 'block';
-            userInfo.classList.remove('active');
-            promptsSection.classList.remove('active');
+        function switchTab(tab) {
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+            systemTab.style.display = tab === 'system' ? 'block' : 'none';
+            featureTab.style.display = tab === 'feature' ? 'block' : 'none';
         }
 
-        // 显示提示词界面
-        function showPrompts() {
-            loginSection.style.display = 'none';
-            userInfo.classList.add('active');
-            userEmail.textContent = currentUser?.email || '未知用户';
-            promptsSection.classList.add('active');
-            loadPrompts();
+        // API helper
+        async function api(path, method = 'GET', body) {
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const res = await fetch(`${API_BASE}${path}`, {
+                method,
+                headers,
+                body: body ? JSON.stringify(body) : undefined,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.message || `请求失败 ${res.status}`);
+            return data;
         }
 
-        // 加载提示词列表
-        async function loadPrompts() {
-            promptsList.innerHTML = '<div class="loading">加载中...</div>';
-
+        // 系统提示词 CRUD
+        async function loadSystemPrompts() {
+            systemLoading.style.display = 'block';
+            systemTable.style.display = 'none';
             try {
-                const data = await apiRequest('/system-prompts');
-                const prompts = data.data || [];
-
-                if (prompts.length === 0) {
-                    promptsList.innerHTML = `
-                        <div class="empty-state">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <p>暂无系统提示词</p>
-                        </div>
-                    `;
-                    return;
+                const data = await api('/api/system-prompts');
+                const list = data.data || [];
+                systemTbody.innerHTML = list.map(renderSystemRow).join('');
+                systemTable.style.display = 'table';
+                // 填充下拉
+                const options = ['<option value="">选择系统提示词</option>'].concat(
+                    list.map(p => `<option value="${p.id}">${escape(p.name)} (${escape(p.functionKey)})</option>`)
+                );
+                fpSystemPromptSelect.innerHTML = options.join('');
+                featureSystemPromptId.innerHTML = options.join('');
+                // 默认选中第一个并加载功能提示词
+                if (!fpSystemPromptSelect.value && list.length > 0) {
+                    fpSystemPromptSelect.value = list[0].id;
                 }
-
-                promptsList.innerHTML = prompts.map(prompt => createPromptCard(prompt)).join('');
-
-                // 绑定编辑按钮事件
-                prompts.forEach(prompt => {
-                    const editBtn = document.getElementById(`editBtn-${prompt.id}`);
-                    const cancelBtn = document.getElementById(`cancelBtn-${prompt.id}`);
-                    const saveBtn = document.getElementById(`saveBtn-${prompt.id}`);
-                    const editForm = document.getElementById(`editForm-${prompt.id}`);
-                    const promptTextarea = document.getElementById(`promptText-${prompt.id}`);
-
-                    if (editBtn) {
-                        editBtn.addEventListener('click', () => {
-                            editForm.classList.add('active');
-                            promptTextarea.value = prompt.prompt;
-                        });
-                    }
-
-                    if (cancelBtn) {
-                        cancelBtn.addEventListener('click', () => {
-                            editForm.classList.remove('active');
-                        });
-                    }
-
-                    if (saveBtn) {
-                        saveBtn.addEventListener('click', () => {
-                            updatePrompt(prompt.id, promptTextarea.value);
-                        });
-                    }
-                });
-            } catch (error) {
-                promptsList.innerHTML = `<div class="alert alert-error active">加载失败: ${error.message}</div>`;
+                if (fpSystemPromptSelect.value) {
+                    await loadFeaturePrompts(fpSystemPromptSelect.value);
+                }
+            } catch (err) {
+                systemTbody.innerHTML = `<tr><td colspan="6">${err.message}</td></tr>`;
+            } finally {
+                systemLoading.style.display = 'none';
             }
         }
 
-        // 创建提示词卡片
-        function createPromptCard(prompt) {
-            const isActive = prompt.isActive ? 'badge-active' : 'badge-inactive';
-            const statusText = prompt.isActive ? '启用' : '禁用';
-            const preview = prompt.prompt.substring(0, 200) + (prompt.prompt.length > 200 ? '...' : '');
-
+        function renderSystemRow(item) {
             return `
-                <div class="prompt-card">
-                    <div class="prompt-header">
-                        <div class="prompt-title">${prompt.name}</div>
-                        <span class="badge ${isActive}">${statusText}</span>
-                    </div>
-                    <div class="prompt-meta">
-                        <span>功能标识: ${prompt.functionKey}</span>
-                        <span>分类: ${prompt.category || '未分类'}</span>
-                        <span>版本: v${prompt.version}</span>
-                    </div>
-                    ${prompt.description ? `<div class="prompt-description">${prompt.description}</div>` : ''}
-                    <div class="prompt-content">${escapeHtml(preview)}</div>
-                    <div class="btn-group">
-                        <button class="btn btn-primary" id="editBtn-${prompt.id}">编辑</button>
-                    </div>
-                    <div class="edit-form" id="editForm-${prompt.id}">
-                        <div class="form-group">
-                            <label>提示词内容</label>
-                            <textarea id="promptText-${prompt.id}" placeholder="请输入提示词内容...">${escapeHtml(prompt.prompt)}</textarea>
-                        </div>
-                        <div class="form-actions">
-                            <button class="btn btn-success" id="saveBtn-${prompt.id}">保存</button>
-                            <button class="btn btn-secondary" id="cancelBtn-${prompt.id}">取消</button>
-                        </div>
-                    </div>
-                </div>
+                <tr>
+                    <td>${escape(item.name)}</td>
+                    <td>${escape(item.functionKey)}</td>
+                    <td>${escape(item.category || '')}</td>
+                    <td><span class="badge ${item.isActive ? 'badge-on' : 'badge-off'}">${item.isActive ? '启用' : '禁用'}</span></td>
+                    <td>v${item.version || 1}</td>
+                    <td class="actions">
+                        <button class="btn" data-action="edit-system" data-id="${item.id}">编辑</button>
+                        <button class="btn btn-danger" data-action="del-system" data-id="${item.id}">删除</button>
+                    </td>
+                </tr>
             `;
         }
 
-        // 更新提示词
-        async function updatePrompt(id, promptText) {
-            if (!promptText.trim()) {
-                showAlert('提示词内容不能为空', 'error');
-                return;
-            }
+        function openSystemModal(item) {
+            systemModalTitle.textContent = item ? '编辑系统提示词' : '新增系统提示词';
+            systemId.value = item?.id || '';
+            systemName.value = item?.name || '';
+            systemFunctionKey.value = item?.functionKey || '';
+            systemCategory.value = item?.category || '';
+            systemDescription.value = item?.description || '';
+            systemPrompt.value = item?.prompt || '';
+            systemIsActive.value = item?.isActive === false ? 'false' : 'true';
+            systemModal.classList.add('show');
+        }
+        function closeSystemModal() { systemModal.classList.remove('show'); }
 
-            const saveBtn = document.getElementById(`saveBtn-${id}`);
-            const originalText = saveBtn.textContent;
-            saveBtn.disabled = true;
-            saveBtn.textContent = '保存中...';
-
+        async function editSystem(id) {
             try {
-                await apiRequest(`/system-prompts/${id}`, {
-                    method: 'PUT',
-                    body: { prompt: promptText },
-                });
+                const data = await api(`/api/system-prompts/${id}`);
+                openSystemModal(data.data || data);
+            } catch (err) {
+                showAlert(err.message, 'error');
+            }
+        }
+        async function deleteSystem(id) {
+            if (!confirm('确认删除该系统提示词？')) return;
+            try {
+                await api(`/api/system-prompts/${id}`, 'DELETE');
+                showAlert('删除成功', 'success');
+                loadSystemPrompts();
+            } catch (err) {
+                showAlert(err.message, 'error');
+            }
+        }
 
-                showAlert('提示词更新成功！', 'success');
-                document.getElementById(`editForm-${id}`).classList.remove('active');
-                loadPrompts();
-            } catch (error) {
-                showAlert(error.message || '更新失败', 'error');
+        async function saveSystemPrompt() {
+            const payload = {
+                name: systemName.value.trim(),
+                functionKey: systemFunctionKey.value.trim(),
+                category: systemCategory.value.trim() || null,
+                description: systemDescription.value.trim() || null,
+                prompt: systemPrompt.value.trim(),
+                isActive: systemIsActive.value === 'true',
+            };
+            if (!payload.name || !payload.functionKey || !payload.prompt) {
+                return showAlert('名称、functionKey、提示词内容必填', 'error');
+            }
+            const idVal = systemId.value;
+            try {
+                if (idVal) {
+                    await api(`/api/system-prompts/${idVal}`, 'PUT', payload);
+                } else {
+                    await api('/api/system-prompts', 'POST', payload);
+                }
+                closeSystemModal();
+                showAlert('保存成功', 'success');
+                loadSystemPrompts();
+            } catch (err) {
+                showAlert(err.message, 'error');
+            }
+        }
+
+        // 功能提示词 CRUD
+        async function loadFeaturePrompts(spId) {
+            const systemPromptId = spId || fpSystemPromptSelect.value;
+            featureLoading.style.display = 'block';
+            featureTable.style.display = 'none';
+            try {
+                if (!systemPromptId) {
+                    featureTbody.innerHTML = '<tr><td colspan="6">请选择系统提示词</td></tr>';
+                    featureLoading.style.display = 'none';
+                    return;
+                }
+                const data = await api(`/api/system-prompts/${systemPromptId}/feature-prompts`);
+                const list = data.data || [];
+                featureTbody.innerHTML = list.map(renderFeatureRow).join('');
+                featureTable.style.display = 'table';
+            } catch (err) {
+                featureTbody.innerHTML = `<tr><td colspan="6">${err.message}</td></tr>`;
             } finally {
-                saveBtn.disabled = false;
-                saveBtn.textContent = originalText;
+                featureLoading.style.display = 'none';
             }
         }
 
-        // HTML 转义
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        function renderFeatureRow(item) {
+            const links = Array.isArray(item.referenceLinks) ? item.referenceLinks : [];
+            const linksHtml = links.length ? links.map(l => `<a href="${l}" target="_blank">${escape(l)}</a>`).join('<br>') : '';
+            return `
+                <tr>
+                    <td>${escape(item.name)}</td>
+                    <td>${escape(item.functionType || '')}</td>
+                    <td>${escape(item.systemPromptId)}</td>
+                    <td>${escape(item.referenceWorks || '')}</td>
+                    <td>${linksHtml}</td>
+                    <td class="actions">
+                        <button class="btn" data-action="edit-feature" data-id="${item.id}">编辑</button>
+                        <button class="btn btn-danger" data-action="del-feature" data-id="${item.id}">删除</button>
+                    </td>
+                </tr>
+            `;
         }
 
-        // 回车键登录
-        passwordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleLogin();
+        function openFeatureModal(item) {
+            featureModalTitle.textContent = item ? '编辑功能提示词' : '新增功能提示词';
+            featureId.value = item?.id || '';
+            featureSystemPromptId.value = item?.systemPromptId || fpSystemPromptSelect.value || '';
+            featureName.value = item?.name || '';
+            featureFunctionType.value = item?.functionType || '';
+            featureReferenceWorks.value = item?.referenceWorks || '';
+            featureReferenceLinks.value = Array.isArray(item?.referenceLinks) ? item.referenceLinks.join(',') : '';
+            featurePrompt.value = item?.prompt || '';
+            featureModal.classList.add('show');
+        }
+        function closeFeatureModal() { featureModal.classList.remove('show'); }
+
+        async function editFeature(id) {
+            try {
+                const data = await api(`/api/system-prompts/feature-prompts/${id}`);
+                openFeatureModal(data.data || data);
+            } catch (err) {
+                showAlert(err.message, 'error');
             }
-        });
+        }
+        async function deleteFeature(id) {
+            if (!confirm('确认删除该功能提示词？')) return;
+            try {
+                await api(`/api/system-prompts/feature-prompts/${id}`, 'DELETE');
+                showAlert('删除成功', 'success');
+                loadFeaturePrompts();
+            } catch (err) {
+                showAlert(err.message, 'error');
+            }
+        }
+
+        async function saveFeaturePrompt() {
+            const payload = {
+                systemPromptId: featureSystemPromptId.value.trim(),
+                name: featureName.value.trim(),
+                functionType: featureFunctionType.value.trim(),
+                referenceWorks: featureReferenceWorks.value.trim() || null,
+                referenceLinks: featureReferenceLinks.value.trim()
+                    ? featureReferenceLinks.value.split(',').map(s => s.trim()).filter(Boolean)
+                    : null,
+                prompt: featurePrompt.value.trim(),
+            };
+            if (!payload.systemPromptId || !payload.name || !payload.functionType || !payload.prompt) {
+                return showAlert('系统提示词ID、名称、功能类型、提示词内容必填', 'error');
+            }
+            const idVal = featureId.value;
+            try {
+                if (idVal) {
+                    await api(`/api/system-prompts/feature-prompts/${idVal}`, 'PUT', payload);
+                } else {
+                    await api(`/api/system-prompts/${payload.systemPromptId}/feature-prompts`, 'POST', payload);
+                }
+                closeFeatureModal();
+                fpSystemPromptId.value = payload.systemPromptId;
+                showAlert('保存成功', 'success');
+                loadFeaturePrompts(payload.systemPromptId);
+            } catch (err) {
+                showAlert(err.message, 'error');
+            }
+        }
+
+        // 工具
+        function escape(str) {
+            if (str === undefined || str === null) return '';
+            return String(str).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function showAlert(msg, type = 'success') {
+            alertBox.textContent = msg;
+            alertBox.className = `alert alert-${type} show`;
+            setTimeout(() => alertBox.classList.remove('show'), 4000);
+        }
     </script>
 </body>
 </html>
