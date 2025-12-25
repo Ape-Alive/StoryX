@@ -3,6 +3,7 @@ const textProcessingService = require('./textProcessingService');
 const logger = require('../utils/logger');
 const { NotFoundError, AppError } = require('../utils/errors');
 const { encrypt, decrypt } = require('../utils/encryption');
+const globalConfigService = require('./globalConfigService');
 
 class ProjectService {
     /**
@@ -18,13 +19,14 @@ class ProjectService {
                 title,
                 description,
                 sourceText,
-                configLLM = 'deepseek',
+                configMode = 'default', // 'default' 使用全局配置，'custom' 使用自定义配置
+                configLLM,
                 configLLMKey,
-                configVideoAI = 'default',
+                configVideoAI,
                 configVideoAIKey,
-                configTTS = 'default',
+                configTTS,
                 configTTSKey,
-                configImageGen = 'default',
+                configImageGen,
                 configImageGenKey,
                 storageLocation,
             } = projectData;
@@ -38,13 +40,84 @@ class ProjectService {
                 throw new AppError('Storage location must be "local" or "remote"', 400);
             }
 
+            // 验证配置模式
+            if (configMode !== 'default' && configMode !== 'custom') {
+                throw new AppError('configMode must be "default" or "custom"', 400);
+            }
+
+            let finalConfigLLM = configLLM;
+            let finalConfigLLMKey = configLLMKey;
+            let finalConfigVideoAI = configVideoAI;
+            let finalConfigVideoAIKey = configVideoAIKey;
+            let finalConfigTTS = configTTS;
+            let finalConfigTTSKey = configTTSKey;
+            let finalConfigImageGen = configImageGen;
+            let finalConfigImageGenKey = configImageGenKey;
+
+            // 如果是普通模式，从全局配置继承
+            if (configMode === 'default') {
+                const globalConfig = await globalConfigService.getGlobalConfigWithKeys();
+                if (globalConfig) {
+                    // 如果全局配置存在，使用全局配置的值（如果项目没有提供自定义值）
+                    finalConfigLLM = finalConfigLLM || globalConfig.configLLM || 'deepseek';
+                    // 如果全局配置有密钥，需要解密（因为存储时是加密的）
+                    if (!finalConfigLLMKey && globalConfig.configLLMKey) {
+                        try {
+                            finalConfigLLMKey = decrypt(globalConfig.configLLMKey);
+                        } catch (error) {
+                            logger.warn('Failed to decrypt global configLLMKey, using as is');
+                            finalConfigLLMKey = globalConfig.configLLMKey;
+                        }
+                    }
+                    finalConfigVideoAI = finalConfigVideoAI || globalConfig.configVideoAI || 'default';
+                    if (!finalConfigVideoAIKey && globalConfig.configVideoAIKey) {
+                        try {
+                            finalConfigVideoAIKey = decrypt(globalConfig.configVideoAIKey);
+                        } catch (error) {
+                            logger.warn('Failed to decrypt global configVideoAIKey, using as is');
+                            finalConfigVideoAIKey = globalConfig.configVideoAIKey;
+                        }
+                    }
+                    finalConfigTTS = finalConfigTTS || globalConfig.configTTS || 'default';
+                    if (!finalConfigTTSKey && globalConfig.configTTSKey) {
+                        try {
+                            finalConfigTTSKey = decrypt(globalConfig.configTTSKey);
+                        } catch (error) {
+                            logger.warn('Failed to decrypt global configTTSKey, using as is');
+                            finalConfigTTSKey = globalConfig.configTTSKey;
+                        }
+                    }
+                    finalConfigImageGen = finalConfigImageGen || globalConfig.configImageGen || 'default';
+                    if (!finalConfigImageGenKey && globalConfig.configImageGenKey) {
+                        try {
+                            finalConfigImageGenKey = decrypt(globalConfig.configImageGenKey);
+                        } catch (error) {
+                            logger.warn('Failed to decrypt global configImageGenKey, using as is');
+                            finalConfigImageGenKey = globalConfig.configImageGenKey;
+                        }
+                    }
+                } else {
+                    // 如果全局配置不存在，使用默认值
+                    finalConfigLLM = finalConfigLLM || 'deepseek';
+                    finalConfigVideoAI = finalConfigVideoAI || 'default';
+                    finalConfigTTS = finalConfigTTS || 'default';
+                    finalConfigImageGen = finalConfigImageGen || 'default';
+                }
+            } else {
+                // 自定义模式：使用提供的值或默认值
+                finalConfigLLM = finalConfigLLM || 'deepseek';
+                finalConfigVideoAI = finalConfigVideoAI || 'default';
+                finalConfigTTS = finalConfigTTS || 'default';
+                finalConfigImageGen = finalConfigImageGen || 'default';
+            }
+
             // 验证配置和密钥的对应关系
             // 如果选择了配置服务，对应的密钥必须提供
             const configKeyPairs = [
-                { config: configLLM, key: configLLMKey, name: 'configLLM', keyName: 'configLLMKey' },
-                { config: configVideoAI, key: configVideoAIKey, name: 'configVideoAI', keyName: 'configVideoAIKey' },
-                { config: configTTS, key: configTTSKey, name: 'configTTS', keyName: 'configTTSKey' },
-                { config: configImageGen, key: configImageGenKey, name: 'configImageGen', keyName: 'configImageGenKey' },
+                { config: finalConfigLLM, key: finalConfigLLMKey, name: 'configLLM', keyName: 'configLLMKey' },
+                { config: finalConfigVideoAI, key: finalConfigVideoAIKey, name: 'configVideoAI', keyName: 'configVideoAIKey' },
+                { config: finalConfigTTS, key: finalConfigTTSKey, name: 'configTTS', keyName: 'configTTSKey' },
+                { config: finalConfigImageGen, key: finalConfigImageGenKey, name: 'configImageGen', keyName: 'configImageGenKey' },
             ];
 
             // 检查：如果配置了服务，对应的密钥必须提供
@@ -60,27 +133,27 @@ class ProjectService {
                 title,
                 description,
                 sourceText: sourceText || '',
-                configLLM,
-                configVideoAI,
-                configTTS,
-                configImageGen,
+                configLLM: finalConfigLLM,
+                configVideoAI: finalConfigVideoAI,
+                configTTS: finalConfigTTS,
+                configImageGen: finalConfigImageGen,
                 storageLocation,
                 status: 'pending',
                 progress: 0,
             };
 
             // 加密密钥字段（如果提供）
-            if (configLLMKey) {
-                encryptedData.configLLMKey = encrypt(configLLMKey);
+            if (finalConfigLLMKey) {
+                encryptedData.configLLMKey = encrypt(finalConfigLLMKey);
             }
-            if (configVideoAIKey) {
-                encryptedData.configVideoAIKey = encrypt(configVideoAIKey);
+            if (finalConfigVideoAIKey) {
+                encryptedData.configVideoAIKey = encrypt(finalConfigVideoAIKey);
             }
-            if (configTTSKey) {
-                encryptedData.configTTSKey = encrypt(configTTSKey);
+            if (finalConfigTTSKey) {
+                encryptedData.configTTSKey = encrypt(finalConfigTTSKey);
             }
-            if (configImageGenKey) {
-                encryptedData.configImageGenKey = encrypt(configImageGenKey);
+            if (finalConfigImageGenKey) {
+                encryptedData.configImageGenKey = encrypt(finalConfigImageGenKey);
             }
 
             const project = await prisma.project.create({
@@ -187,6 +260,7 @@ class ProjectService {
     async getUserProjects(userId, options = {}) {
         try {
             const {
+                all = false,
                 page = 1,
                 limit = 10,
                 status,
@@ -198,6 +272,26 @@ class ProjectService {
                 where.status = status;
             }
 
+            // 如果 all=true，获取所有项目，不分页
+            if (all) {
+                const projects = await prisma.project.findMany({
+                    where,
+                    orderBy: { createdAt: 'desc' },
+                });
+
+                // 移除所有项目的密钥字段
+                const projectsWithoutKeys = projects.map(project => {
+                    const { configLLMKey, configVideoAIKey, configTTSKey, configImageGenKey, ...projectWithoutKeys } = project;
+                    return projectWithoutKeys;
+                });
+
+                return {
+                    projects: projectsWithoutKeys,
+                    total: projectsWithoutKeys.length,
+                };
+            }
+
+            // 分页查询
             const skip = (page - 1) * limit;
 
             const [projects, total] = await Promise.all([

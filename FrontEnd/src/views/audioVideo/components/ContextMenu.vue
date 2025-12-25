@@ -7,9 +7,11 @@
   >
     <div class="context-menu-header">
       <span class="context-menu-title">
-        {{ item?.shotId || "Clip Action" }}
+        {{ type === "shot" ? item?.shotId || "SHOT" : "CLIP ACTION" }}
       </span>
-      <ScissorsIcon :size="10" class="scissors-icon" />
+      <button @click="emit('close')" class="close-btn">
+        <ScissorsIcon :size="10" class="scissors-icon" />
+      </button>
     </div>
     <button
       @click="handleEdit"
@@ -17,7 +19,7 @@
     >
       <IconEdit :size="14" class="item-icon item-icon-blue" /> 编辑内容描述
     </button>
-    <template v-if="type === 'shot'">
+    <template v-if="showInsertOptions">
       <button
         @click="handleInsertBefore"
         class="context-menu-item context-menu-item-emerald"
@@ -44,7 +46,7 @@
 </template>
 
 <script setup>
-import { watch, h } from "vue";
+import { watch, h, computed } from "vue";
 import {
   IconEdit,
   IconArrowLeft,
@@ -97,6 +99,11 @@ const props = defineProps({
     type: String,
     default: "",
   },
+});
+
+// 计算是否显示插入选项（仅对 shot 类型显示）
+const showInsertOptions = computed(() => {
+  return props.type === "shot";
 });
 
 const emit = defineEmits([
@@ -180,8 +187,23 @@ watch(
   text-overflow: ellipsis;
 }
 
+.close-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .scissors-icon {
   color: #cbd5e1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover .scissors-icon {
+  color: #94a3b8;
 }
 
 .context-menu-item {

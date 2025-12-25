@@ -20,17 +20,23 @@ router.use(authenticate);
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
+ *         name: all
+ *         schema:
+ *           type: boolean
+ *           default: false
+ *         description: 是否获取全部项目（不分页），设置为 true 时忽略 page 和 limit 参数
+ *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           default: 1
- *         description: 页码
+ *         description: 页码（当 all=false 时生效）
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 10
- *         description: 每页数量
+ *         description: 每页数量（当 all=false 时生效）
  *       - in: query
  *         name: status
  *         schema:
@@ -134,6 +140,12 @@ router.get('/:id', projectController.getProject);
  *               sourceText:
  *                 type: string
  *                 example: "小说文本内容"
+ *               configMode:
+ *                 type: string
+ *                 enum: [default, custom]
+ *                 default: default
+ *                 description: 配置模式，default使用全局配置，custom使用自定义配置
+ *                 example: "default"
  *               configLLM:
  *                 type: string
  *                 format: uuid
@@ -207,6 +219,11 @@ router.post(
         body('sourceText')
             .optional()
             .trim(),
+        body('configMode')
+            .optional()
+            .trim()
+            .isIn(['default', 'custom'])
+            .withMessage('configMode must be "default" or "custom"'),
         body('configLLM')
             .optional()
             .trim()

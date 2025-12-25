@@ -313,7 +313,9 @@
               >
                 {{ getStatusLabel(project.status) }}
               </span>
-              <span class="project-mode">{{ project.mode || "normal" }}</span>
+              <span class="project-mode">{{
+                project.configMode || "default"
+              }}</span>
             </div>
 
             <div class="project-card-body">
@@ -404,7 +406,9 @@
                   </span>
                 </td>
                 <td>
-                  <span class="table-mode">{{ project.mode || "normal" }}</span>
+                  <span class="table-mode">{{
+                    project.configMode || "default"
+                  }}</span>
                 </td>
                 <td class="table-cell-description">
                   <span class="table-description">
@@ -573,15 +577,19 @@
                 <label class="form-label">运行脚本/小说文本</label>
                 <div class="mode-switch">
                   <button
-                    @click="form.mode = 'normal'"
-                    :class="form.mode === 'normal' ? 'mode-switch-active' : ''"
+                    @click="form.configMode = 'default'"
+                    :class="
+                      form.configMode === 'default' ? 'mode-switch-active' : ''
+                    "
                     class="mode-switch-btn"
                   >
                     标准
                   </button>
                   <button
-                    @click="form.mode = 'custom'"
-                    :class="form.mode === 'custom' ? 'mode-switch-active' : ''"
+                    @click="form.configMode = 'custom'"
+                    :class="
+                      form.configMode === 'custom' ? 'mode-switch-active' : ''
+                    "
                     class="mode-switch-btn"
                   >
                     专家
@@ -597,7 +605,7 @@
             </div>
 
             <!-- 专家模式配置 -->
-            <div v-if="form.mode === 'custom'" class="form-section">
+            <div v-if="form.configMode === 'custom'" class="form-section">
               <div class="form-section-header">
                 <label class="form-label">AI 模型配置</label>
               </div>
@@ -864,8 +872,8 @@ const form = reactive({
   title: "",
   description: "",
   sourceText: "",
-  mode: "normal",
   storageLocation: "local",
+  configMode: "default", // 配置模式：default使用全局配置，custom使用自定义配置
   // 专家模式配置
   configLLM: "",
   configLLMKey: "",
@@ -1029,8 +1037,8 @@ function openModal(type, project = null) {
     form.title = project.title || "";
     form.description = project.description || "";
     form.sourceText = project.sourceText || "";
-    form.mode = project.mode || "normal";
     form.storageLocation = project.storageLocation || "local";
+    form.configMode = project.configMode || "default";
     form.configLLM = project.configLLM || "";
     form.configLLMKey = project.configLLMKey || "";
     form.configVideoAI = project.configVideoAI || "";
@@ -1043,8 +1051,8 @@ function openModal(type, project = null) {
     form.title = "";
     form.description = "";
     form.sourceText = "";
-    form.mode = "normal";
     form.storageLocation = "local";
+    form.configMode = "default";
     form.configLLM = "";
     form.configLLMKey = "";
     form.configVideoAI = "";
@@ -1066,7 +1074,7 @@ function clearError(field) {
 function validateField(field) {
   if (field === "title") {
     formErrors.title = !form.title || form.title.trim() === "";
-  } else if (form.mode === "custom") {
+  } else if (form.configMode === "custom") {
     // 专家模式下的校验
     if (field === "configLLM") {
       formErrors.configLLM = !form.configLLM;
@@ -1102,7 +1110,7 @@ function validateForm() {
   }
 
   // 专家模式下的校验
-  if (form.mode === "custom") {
+  if (form.configMode === "custom") {
     // LLM 配置校验
     if (form.configLLM && !form.configLLMKey) {
       formErrors.configLLMKey = true;
@@ -1160,12 +1168,12 @@ async function handleSave() {
       title: form.title,
       description: form.description,
       sourceText: form.sourceText,
-      mode: form.mode,
       storageLocation: form.storageLocation,
+      configMode: form.configMode,
     };
 
     // 专家模式下添加配置字段
-    if (form.mode === "custom") {
+    if (form.configMode === "custom") {
       submitData.configLLM = form.configLLM;
       submitData.configLLMKey = form.configLLMKey;
       submitData.configVideoAI = form.configVideoAI;

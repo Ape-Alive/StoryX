@@ -22,6 +22,7 @@ const characterDrawRoutes = require('./routes/characterDrawRoutes');
 const sceneRoutes = require('./routes/sceneRoutes');
 const mediaRoutes = require('./routes/mediaRoutes');
 const materialRoutes = require('./routes/materialRoutes');
+const globalConfigRoutes = require('./routes/globalConfigRoutes');
 
 // Initialize Express app
 const app = express();
@@ -137,6 +138,7 @@ app.use('/api/system-prompts', systemPromptRoutes);
 app.use('/api/scenes', sceneRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/materials', materialRoutes);
+app.use('/api/global-config', globalConfigRoutes);
 
 // 404 handler
 app.use((req, res) => {

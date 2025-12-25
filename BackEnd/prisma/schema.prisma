@@ -568,3 +568,21 @@ model FeaturePrompt {
 // 扩展Novel模型，添加scriptTasks关系
 
 // 扩展Project模型，添加scriptTasks关系
+
+// 全局配置表（存储系统级别的AI模型配置）
+model GlobalConfig {
+  id              String   @id @default(uuid())
+  // AI模型配置
+  configLLM       String?  // LLM模型UUID
+  configLLMKey    String?  // LLM API密钥（加密存储）
+  configVideoAI   String?  // 视频AI模型UUID
+  configVideoAIKey String? // 视频AI API密钥（加密存储）
+  configTTS       String?  // TTS模型UUID
+  configTTSKey    String?  // TTS API密钥（加密存储）
+  configImageGen  String?  // 图片生成模型UUID
+  configImageGenKey String? // 图片生成API密钥（加密存储）
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("global_config")
+}

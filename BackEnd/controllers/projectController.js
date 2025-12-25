@@ -18,8 +18,9 @@ class ProjectController {
      * GET /api/projects
      */
     getProjects = asyncHandler(async (req, res) => {
-        const { page, limit, status } = req.query;
+        const { page, limit, status, all } = req.query;
         const result = await projectService.getUserProjects(req.user.id, {
+            all: all === 'true',
             page: parseInt(page) || 1,
             limit: parseInt(limit) || 10,
             status,

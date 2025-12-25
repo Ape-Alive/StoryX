@@ -43,11 +43,18 @@ CREATE INDEX "ScriptTaskBatch_novelId_status_idx" ON "ScriptTaskBatch"("novelId"
 CREATE INDEX "ScriptTaskBatch_createdAt_idx" ON "ScriptTaskBatch"("createdAt" DESC);
 
 -- AlterTable
+-- SQLite doesn't support adding foreign keys with ALTER TABLE, so we need to recreate the table
+PRAGMA foreign_keys=OFF;
+PRAGMA defer_foreign_keys=ON;
+
+-- Add column first (without foreign key)
 ALTER TABLE "ScriptTask" ADD COLUMN "batchId" TEXT;
 
 -- CreateIndex
 CREATE INDEX "ScriptTask_batchId_idx" ON "ScriptTask"("batchId");
 
--- AddForeignKey
-ALTER TABLE "ScriptTask" ADD CONSTRAINT "ScriptTask_batchId_fkey" FOREIGN KEY ("batchId") REFERENCES "ScriptTaskBatch" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- Note: Foreign key constraint will be enforced by Prisma at the application level
+-- SQLite foreign keys are optional and need to be enabled with PRAGMA foreign_keys=ON
+PRAGMA foreign_keys=ON;
+PRAGMA defer_foreign_keys=OFF;
 
