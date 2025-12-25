@@ -435,6 +435,7 @@
                         <th>类型</th>
                         <th>分类</th>
                         <th>Base URL</th>
+                        <th>API 配置</th>
                         <th>状态</th>
                         <th>需要密钥</th>
                         <th>操作</th>
@@ -531,6 +532,11 @@
                 <div class="form-group">
                     <label>Base URL</label>
                     <input type="url" id="modelBaseUrl" placeholder="API 基路径">
+                </div>
+                <div class="form-group">
+                    <label>API 配置参数 (JSON)</label>
+                    <textarea id="modelApiConfig" placeholder='{"temperature": 0.7, "max_tokens": 2000}' style="font-family: monospace; min-height: 120px;"></textarea>
+                    <small style="color: #666; display: block; margin-top: 5px;">输入 JSON 格式的配置对象，例如：{"temperature": 0.7, "max_tokens": 2000}</small>
                 </div>
                 <div class="form-group">
                     <label>
@@ -878,6 +884,7 @@
                     <td><span class="status-badge">${model.type.toUpperCase()}</span></td>
                     <td>${model.category || '-'}</td>
                     <td>${model.baseUrl || '-'}</td>
+                    <td>${model.apiConfig ? JSON.stringify(model.apiConfig).substring(0, 50) + (JSON.stringify(model.apiConfig).length > 50 ? '...' : '') : '-'}</td>
                     <td><span class="status-badge ${model.isActive ? 'status-active' : 'status-inactive'}">${model.isActive ? '启用' : '禁用'}</span></td>
                     <td>${model.requiresKey ? '是' : '否'}</td>
                     <td>
@@ -925,6 +932,7 @@
                     document.getElementById('modelType').value = model.type;
                     document.getElementById('modelCategory').value = model.category || '';
                     document.getElementById('modelBaseUrl').value = model.baseUrl || '';
+                    document.getElementById('modelApiConfig').value = model.apiConfig ? JSON.stringify(model.apiConfig, null, 2) : '';
                     document.getElementById('modelIsActive').checked = model.isActive;
                     document.getElementById('modelRequiresKey').checked = model.requiresKey;
                 }
@@ -945,6 +953,19 @@
             e.preventDefault();
 
             const modelId = document.getElementById('modelId').value;
+
+            // 解析 apiConfig
+            let apiConfig = null;
+            const apiConfigValue = document.getElementById('modelApiConfig').value.trim();
+            if (apiConfigValue) {
+                try {
+                    apiConfig = JSON.parse(apiConfigValue);
+                } catch (e) {
+                    showAlert('API 配置参数格式错误，请输入有效的 JSON 格式', 'error');
+                    return;
+                }
+            }
+
             const data = {
                 providerId: document.getElementById('modelProviderId').value,
                 name: document.getElementById('modelName').value,
@@ -953,6 +974,7 @@
                 type: document.getElementById('modelType').value,
                 category: document.getElementById('modelCategory').value || null,
                 baseUrl: document.getElementById('modelBaseUrl').value || null,
+                apiConfig: apiConfig,
                 isActive: document.getElementById('modelIsActive').checked,
                 requiresKey: document.getElementById('modelRequiresKey').checked,
             };

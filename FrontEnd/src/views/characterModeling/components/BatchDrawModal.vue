@@ -29,7 +29,10 @@
               @click="config.drawType = 'image'"
             >
               <div class="radio-indicator">
-                <IconCheckCircle v-if="config.drawType === 'image'" :size="16" />
+                <IconCheckCircle
+                  v-if="config.drawType === 'image'"
+                  :size="16"
+                />
               </div>
               <div class="radio-content">
                 <div class="radio-label">图片 (Image)</div>
@@ -44,7 +47,10 @@
               @click="config.drawType = 'video'"
             >
               <div class="radio-indicator">
-                <IconCheckCircle v-if="config.drawType === 'video'" :size="16" />
+                <IconCheckCircle
+                  v-if="config.drawType === 'video'"
+                  :size="16"
+                />
               </div>
               <div class="radio-content">
                 <div class="radio-label">视频 (Video)</div>
@@ -58,15 +64,20 @@
         <div class="config-section">
           <div class="section-header">
             <IconSettings :size="16" class="section-icon" />
-            <span class="section-title">功能提示词</span>
+            <span class="section-title">
+              功能提示词
+              <span class="form-required">*</span>
+            </span>
           </div>
           <a-select
             v-model="config.featurePromptId"
-            placeholder="请选择功能提示词（可选）"
+            placeholder="请选择功能提示词"
             class="config-select"
+            :class="{ 'form-input-error': formErrors.featurePromptId }"
             :loading="loadingPrompts"
             allow-search
             allow-clear
+            @change="clearFormError('featurePromptId')"
           >
             <a-option
               v-for="prompt in featurePrompts"
@@ -77,20 +88,32 @@
               {{ prompt.name || prompt.title }}
             </a-option>
           </a-select>
+          <div v-if="formErrors.featurePromptId" class="field-error">
+            {{ formErrors.featurePromptId }}
+          </div>
         </div>
 
         <!-- 题材风格 -->
         <div class="config-section">
           <div class="section-header">
             <BrushIcon :size="16" class="section-icon" />
-            <span class="section-title">题材风格</span>
+            <span class="section-title">
+              题材风格
+              <span class="form-required">*</span>
+            </span>
           </div>
           <a-input
             v-model="config.genreStyle"
-            placeholder="如：古风、现代、科幻等（可选）"
+            placeholder="如：古风、现代、科幻等"
             class="config-input"
+            :class="{ 'form-input-error': formErrors.genreStyle }"
             allow-clear
+            @blur="validateFormField('genreStyle')"
+            @input="clearFormError('genreStyle')"
           />
+          <div v-if="formErrors.genreStyle" class="field-error">
+            {{ formErrors.genreStyle }}
+          </div>
         </div>
 
         <!-- 资源存储模式 -->
@@ -111,18 +134,72 @@
         <div class="config-section">
           <div class="section-header">
             <CodeIcon :size="16" class="section-icon" />
-            <span class="section-title">自定义 API 配置（可选）</span>
+            <span class="section-title">
+              自定义 API 配置
+              <span class="form-required">*</span>
+            </span>
           </div>
-          <div class="api-config-tip">
-            <span class="tip-text">可自定义提示词、尺寸等参数（JSON 格式）</span>
+          <div v-if="loadingApiConfig" class="api-config-loading">
+            <a-spin size="small" />
+            <span class="loading-text">正在加载配置...</span>
           </div>
-          <a-textarea
-            v-model="apiConfigText"
-            placeholder='例如：{"prompt": "自定义提示词", "width": 1024, "height": 1024, "duration": 2}'
-            :rows="4"
-            class="config-textarea"
-            @blur="handleApiConfigBlur"
-          />
+          <div v-else-if="apiConfigError" class="api-config-error">
+            <span class="error-text">{{ apiConfigError }}</span>
+          </div>
+          <div
+            v-else-if="apiConfigFields.length === 0"
+            class="api-config-empty"
+          >
+            <span class="empty-text">暂无可用配置项</span>
+          </div>
+          <div v-else class="api-config-fields">
+            <div
+              v-for="field in apiConfigFields"
+              :key="field.key"
+              class="api-config-field"
+            >
+              <label class="field-label">
+                {{ field.label }}
+                <span v-if="field.required" class="form-required">*</span>
+              </label>
+              <!-- 数组类型：下拉选择 -->
+              <a-select
+                v-if="field.isArray"
+                v-model="apiConfigValues[field.key]"
+                :placeholder="`请选择${field.label}`"
+                class="config-select"
+                :class="{
+                  'form-input-error': apiConfigErrors[field.key],
+                }"
+                allow-clear
+                @change="clearApiConfigError(field.key)"
+              >
+                <a-option
+                  v-for="option in field.options"
+                  :key="option"
+                  :value="option"
+                >
+                  {{ option }}
+                </a-option>
+              </a-select>
+              <!-- 非数组类型：输入框 -->
+              <a-input
+                v-else
+                v-model="apiConfigValues[field.key]"
+                :placeholder="`请输入${field.label}`"
+                class="config-input"
+                :class="{
+                  'form-input-error': apiConfigErrors[field.key],
+                }"
+                allow-clear
+                @blur="validateApiConfigField(field.key)"
+                @input="clearApiConfigError(field.key)"
+              />
+              <div v-if="apiConfigErrors[field.key]" class="field-error">
+                {{ apiConfigErrors[field.key] }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -148,6 +225,7 @@ import {
   IconVideoCamera,
 } from "@arco-design/web-vue/es/icon";
 import { getFeaturePrompts } from "@/api/systemPrompts";
+import { getProjectModelApiConfig } from "@/api/project";
 
 // 代码图标 SVG
 const CodeIcon = {
@@ -191,7 +269,12 @@ const BrushIcon = {
         },
         [
           h("circle", { cx: "13.5", cy: "6.5", r: ".5", fill: "currentColor" }),
-          h("circle", { cx: "17.5", cy: "10.5", r: ".5", fill: "currentColor" }),
+          h("circle", {
+            cx: "17.5",
+            cy: "10.5",
+            r: ".5",
+            fill: "currentColor",
+          }),
           h("circle", { cx: "8.5", cy: "7.5", r: ".5", fill: "currentColor" }),
           h("circle", { cx: "6.5", cy: "12.5", r: ".5", fill: "currentColor" }),
           h("path", {
@@ -239,13 +322,25 @@ const props = defineProps({
     type: Number,
     default: 0,
   },
+  projectId: {
+    type: String,
+    required: true,
+  },
 });
 
 const emit = defineEmits(["confirm", "cancel"]);
 
 const loadingPrompts = ref(false);
 const featurePrompts = ref([]);
-const apiConfigText = ref("");
+const loadingApiConfig = ref(false);
+const apiConfigError = ref("");
+const apiConfigFields = ref([]);
+const apiConfigValues = reactive({});
+const apiConfigErrors = reactive({});
+const formErrors = reactive({
+  featurePromptId: "",
+  genreStyle: "",
+});
 
 const config = reactive({
   drawType: "image", // 'image' | 'video'
@@ -284,21 +379,153 @@ async function loadFeaturePrompts() {
   }
 }
 
-// 处理 API 配置文本输入
-function handleApiConfigBlur() {
-  const text = apiConfigText.value.trim();
-  if (!text) {
-    config.apiConfig = null;
+// 加载 API 配置
+async function loadApiConfig() {
+  if (!props.projectId) {
+    apiConfigError.value = "项目ID不存在";
     return;
   }
 
+  loadingApiConfig.value = true;
+  apiConfigError.value = "";
+  apiConfigFields.value = [];
+  Object.keys(apiConfigValues).forEach((key) => {
+    delete apiConfigValues[key];
+  });
+  Object.keys(apiConfigErrors).forEach((key) => {
+    delete apiConfigErrors[key];
+  });
+
   try {
-    config.apiConfig = JSON.parse(text);
+    // 根据抽卡类型确定模型类型
+    const modelType = config.drawType === "video" ? "video" : "image";
+    const response = await getProjectModelApiConfig(props.projectId, modelType);
+
+    if (
+      response &&
+      response.success &&
+      response.data &&
+      response.data.apiConfig
+    ) {
+      const apiConfig = response.data.apiConfig;
+
+      // 将配置转换为表单字段
+      const fields = [];
+      for (const [key, value] of Object.entries(apiConfig)) {
+        const isArray = Array.isArray(value);
+        fields.push({
+          key,
+          label: formatFieldLabel(key),
+          isArray,
+          options: isArray ? value : [],
+          required: true, // 所有字段都是必填的
+        });
+
+        // 初始化字段值
+        if (isArray) {
+          apiConfigValues[key] = value[0] || ""; // 默认选择第一个选项
+        } else {
+          // 将值转换为字符串以便在输入框中显示
+          apiConfigValues[key] = value != null ? String(value) : "";
+        }
+      }
+
+      apiConfigFields.value = fields;
+    } else {
+      apiConfigError.value = "未找到可用的 API 配置";
+    }
   } catch (error) {
-    Message.warning("API 配置格式错误，请输入有效的 JSON");
-    apiConfigText.value = "";
-    config.apiConfig = null;
+    console.error("加载 API 配置失败:", error);
+    apiConfigError.value = error.message || "加载 API 配置失败";
+  } finally {
+    loadingApiConfig.value = false;
   }
+}
+
+// 格式化字段标签
+function formatFieldLabel(key) {
+  const labelMap = {
+    aspectRatio: "宽高比",
+    duration: "时长",
+    remixTargetId: "混音目标ID",
+    size: "尺寸",
+    prompt: "提示词",
+    width: "宽度",
+    height: "高度",
+  };
+  return labelMap[key] || key;
+}
+
+// 清除字段错误
+function clearApiConfigError(key) {
+  if (apiConfigErrors[key]) {
+    delete apiConfigErrors[key];
+  }
+}
+
+// 验证单个字段
+function validateApiConfigField(key) {
+  const value = apiConfigValues[key];
+  if (!value && value !== 0 && value !== false) {
+    apiConfigErrors[key] = "此字段为必填项";
+    return false;
+  }
+  clearApiConfigError(key);
+  return true;
+}
+
+// 验证所有 API 配置字段
+function validateApiConfig() {
+  let isValid = true;
+  apiConfigFields.value.forEach((field) => {
+    if (field.required && !validateApiConfigField(field.key)) {
+      isValid = false;
+    }
+  });
+  return isValid;
+}
+
+// 清除表单字段错误
+function clearFormError(field) {
+  if (formErrors[field]) {
+    formErrors[field] = "";
+  }
+}
+
+// 验证表单字段
+function validateFormField(field) {
+  let isValid = true;
+  const value = config[field];
+
+  if (field === "featurePromptId") {
+    if (!value || (typeof value === "string" && value.trim() === "")) {
+      formErrors.featurePromptId = "请选择功能提示词";
+      isValid = false;
+    } else {
+      clearFormError("featurePromptId");
+    }
+  } else if (field === "genreStyle") {
+    if (!value || (typeof value === "string" && value.trim() === "")) {
+      formErrors.genreStyle = "请输入题材风格";
+      isValid = false;
+    } else {
+      clearFormError("genreStyle");
+    }
+  }
+
+  return isValid;
+}
+
+// 验证所有表单字段
+function validateForm() {
+  let isValid = true;
+  if (!validateFormField("featurePromptId")) {
+    isValid = false;
+  }
+  if (!validateFormField("genreStyle")) {
+    isValid = false;
+  }
+  return isValid;
 }
 
 // 监听弹窗显示，加载数据
@@ -313,18 +540,24 @@ watch(
       config.genreStyle = "";
       config.storageMode = "download_upload";
       config.apiConfig = null;
-      apiConfigText.value = "";
+      // 清除错误状态
+      formErrors.featurePromptId = "";
+      formErrors.genreStyle = "";
+      // 加载 API 配置
+      loadApiConfig();
     }
   }
 );
 
-// 监听抽卡类型变化，重新加载提示词
+// 监听抽卡类型变化，重新加载提示词和 API 配置
 watch(
   () => config.drawType,
   () => {
     if (props.visible) {
       loadFeaturePrompts();
       config.featurePromptId = "";
+      // 重新加载 API 配置（因为不同类型对应不同的模型）
+      loadApiConfig();
     }
   }
 );
@@ -335,23 +568,45 @@ function handleConfirm() {
     return;
   }
 
+  // 验证表单字段
+  if (!validateForm()) {
+    Message.warning("请完善必填项");
+    return;
+  }
+
+  // 验证 API 配置
+  if (!validateApiConfig()) {
+    Message.warning("请完善自定义 API 配置");
+    return;
+  }
+
+  // 构建 API 配置对象
+  const apiConfig = {};
+  apiConfigFields.value.forEach((field) => {
+    const value = apiConfigValues[field.key];
+    if (value !== undefined && value !== null && value !== "") {
+      // 如果是数字字符串，尝试转换为数字
+      if (
+        !field.isArray &&
+        typeof value === "string" &&
+        !isNaN(value) &&
+        value.trim() !== ""
+      ) {
+        apiConfig[field.key] = Number(value);
+      } else {
+        apiConfig[field.key] = value;
+      }
+    }
+  });
+
   // 构建请求数据
   const requestData = {
     drawType: config.drawType,
     storageMode: config.storageMode,
+    featurePromptId: config.featurePromptId,
+    genreStyle: config.genreStyle,
+    apiConfig: apiConfig,
   };
-
-  if (config.featurePromptId) {
-    requestData.featurePromptId = config.featurePromptId;
-  }
-
-  if (config.genreStyle) {
-    requestData.genreStyle = config.genreStyle;
-  }
-
-  if (config.apiConfig) {
-    requestData.apiConfig = config.apiConfig;
-  }
 
   emit("confirm", requestData);
 }
@@ -536,14 +791,74 @@ function handleCancel() {
   width: 100%;
 }
 
-.api-config-tip {
-  margin-bottom: 8px;
+.api-config-loading,
+.api-config-error,
+.api-config-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
 }
 
-.tip-text {
-  font-size: 12px;
+.api-config-loading {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.api-config-error {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.api-config-empty {
+  background-color: #f8fafc;
   color: #94a3b8;
-  font-style: italic;
+}
+
+.loading-text,
+.error-text,
+.empty-text {
+  font-size: 12px;
+}
+
+.api-config-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.api-config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.form-required {
+  color: #ef4444;
+  margin-left: 4px;
+}
+
+.field-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: -4px;
+}
+
+.form-input-error {
+  border-color: #ef4444 !important;
+}
+
+.form-input-error:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1) !important;
 }
 
 .modal-footer {
@@ -595,4 +910,3 @@ function handleCancel() {
   transform: scale(0.98);
 }
 </style>
-

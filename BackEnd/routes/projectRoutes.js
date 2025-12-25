@@ -114,6 +114,62 @@ router.get('/:id', projectController.getProject);
 
 /**
  * @swagger
+ * /api/projects/{id}/model-api-config:
+ *   get:
+ *     summary: 获取项目指定类型模型的apiConfig
+ *     description: 根据项目ID和模型类型获取当前项目使用的该类型模型的apiConfig配置
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: 项目ID
+ *       - in: query
+ *         name: modelType
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [llm, video, tts, image]
+ *         description: 模型类型
+ *     responses:
+ *       200:
+ *         description: 成功返回apiConfig
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         apiConfig:
+ *                           type: object
+ *                           nullable: true
+ *                           description: API配置参数对象，如果项目未配置该类型模型则返回null
+ *       400:
+ *         description: 请求参数错误（模型类型无效）
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: 项目不存在
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/:id/model-api-config', projectController.getProjectModelApiConfig);
+
+/**
+ * @swagger
  * /api/projects:
  *   post:
  *     summary: 创建新项目

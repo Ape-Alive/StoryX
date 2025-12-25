@@ -166,6 +166,7 @@
     <BatchDrawModal
       :visible="showBatchDrawModal"
       :selected-count="selectedIds.length"
+      :project-id="projectId"
       @confirm="handleBatchDrawConfirm"
       @cancel="showBatchDrawModal = false"
     />

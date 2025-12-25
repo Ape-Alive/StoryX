@@ -420,6 +420,10 @@ router.get('/all', authenticate, aiModelController.getAllModels);
  *               baseUrl:
  *                 type: string
  *                 description: API基路径
+ *               apiConfig:
+ *                 type: object
+ *                 description: API配置参数（对象），存储每个模型独有的请求参数
+ *                 example: {"temperature": 0.7, "max_tokens": 2000}
  *               isActive:
  *                 type: boolean
  *                 default: true
@@ -473,6 +477,10 @@ router.post('/', authenticate, aiModelController.createModel);
  *                 type: string
  *               baseUrl:
  *                 type: string
+ *               apiConfig:
+ *                 type: object
+ *                 description: API配置参数（对象），存储每个模型独有的请求参数
+ *                 example: {"temperature": 0.7, "max_tokens": 2000}
  *               isActive:
  *                 type: boolean
  *               requiresKey:

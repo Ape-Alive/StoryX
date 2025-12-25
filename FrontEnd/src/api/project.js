@@ -76,3 +76,12 @@ export function getConfigOptions() {
   return request.get('/ai-models/config-options')
 }
 
+/**
+ * 获取项目指定类型模型的apiConfig
+ * @param {string} id 项目ID
+ * @param {string} modelType 模型类型：'llm' | 'video' | 'tts' | 'image'
+ */
+export function getProjectModelApiConfig(id, modelType) {
+  return request.get(`/projects/${id}/model-api-config`, { modelType })
+}
+

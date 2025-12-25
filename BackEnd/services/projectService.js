@@ -4,6 +4,7 @@ const logger = require('../utils/logger');
 const { NotFoundError, AppError } = require('../utils/errors');
 const { encrypt, decrypt } = require('../utils/encryption');
 const globalConfigService = require('./globalConfigService');
+const aiModelService = require('./aiModelService');
 
 class ProjectService {
     /**
@@ -517,6 +518,70 @@ class ProjectService {
         } catch (error) {
             logger.error('Update progress error:', error);
             throw error;
+        }
+    }
+
+    /**
+     * 获取项目指定类型模型的apiConfig
+     * @param {string} projectId - 项目ID
+     * @param {string} modelType - 模型类型: "llm" | "video" | "tts" | "image"
+     * @param {string} userId - 用户ID（用于验证项目所有权）
+     * @returns {Object|null} - apiConfig对象，如果未配置则返回null
+     */
+    async getProjectModelApiConfig(projectId, modelType, userId) {
+        try {
+            const prisma = getPrisma();
+
+            // 验证模型类型
+            const validTypes = ['llm', 'video', 'tts', 'image'];
+            if (!validTypes.includes(modelType)) {
+                throw new AppError(`Invalid model type. Must be one of: ${validTypes.join(', ')}`, 400);
+            }
+
+            // 获取项目信息
+            const project = await prisma.project.findFirst({
+                where: {
+                    id: projectId,
+                    userId,
+                },
+            });
+
+            if (!project) {
+                throw new NotFoundError('Project not found');
+            }
+
+            // 根据模型类型映射到项目的配置字段
+            const modelTypeToConfigField = {
+                'llm': 'configLLM',
+                'video': 'configVideoAI',
+                'tts': 'configTTS',
+                'image': 'configImageGen',
+            };
+
+            const modelId = project[modelTypeToConfigField[modelType]];
+
+            // 如果项目未配置该类型的模型，返回null
+            if (!modelId || modelId === 'default' || modelId === 'deepseek') {
+                return null;
+            }
+
+            // 根据模型ID获取模型信息
+            try {
+                const model = await aiModelService.getModelById(modelId);
+
+                // 返回apiConfig（已解析为对象）
+                return model.apiConfig || null;
+            } catch (error) {
+                // 如果模型不存在，记录警告并返回null
+                logger.warn(`Model not found for project ${projectId}, modelType: ${modelType}, modelId: ${modelId}`);
+                return null;
+            }
+        } catch (error) {
+            if (error instanceof NotFoundError || error instanceof AppError) {
+                throw error;
+            }
+            logger.error('Get project model apiConfig error:', error);
+            throw new AppError('Failed to get project model apiConfig', 500);
         }
     }
 }

@@ -191,6 +191,7 @@ model AIModel {
   type        String // 模型类型: "llm" | "video" | "image" | "tts"
   category    String? // 分类，如 "chat", "completion", "generation" 等
   baseUrl     String? // API 基路径/端点
+  apiConfig   String? // API配置参数（JSON字符串），存储每个模型独有的请求参数
   isActive    Boolean  @default(true) // 是否启用
   requiresKey Boolean  @default(true) // 是否需要API密钥
   createdAt   DateTime @default(now())

@@ -4,6 +4,47 @@ const { NotFoundError, AppError } = require('../utils/errors');
 
 class AIModelService {
   /**
+   * Parse apiConfig from JSON string to object
+   * @param {string|object|null} apiConfig - API config string or object
+   * @returns {object|null} - Parsed API config object or null
+   */
+  parseApiConfig(apiConfig) {
+    if (!apiConfig) {
+      return null;
+    }
+    if (typeof apiConfig === 'object') {
+      return apiConfig;
+    }
+    if (typeof apiConfig === 'string') {
+      try {
+        return JSON.parse(apiConfig);
+      } catch (e) {
+        logger.warn('Failed to parse apiConfig:', e);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Parse apiConfig for a model or array of models
+   * @param {object|array} models - Model or array of models
+   * @returns {object|array} - Model(s) with parsed apiConfig
+   */
+  parseModelsApiConfig(models) {
+    if (Array.isArray(models)) {
+      return models.map(model => {
+        if (model.apiConfig) {
+          return { ...model, apiConfig: this.parseApiConfig(model.apiConfig) };
+        }
+        return model;
+      });
+    } else if (models && models.apiConfig) {
+      return { ...models, apiConfig: this.parseApiConfig(models.apiConfig) };
+    }
+    return models;
+  }
+  /**
    * Get all active AI providers
    * @returns {Array} - Array of AI providers
    */
@@ -21,7 +62,11 @@ class AIModelService {
         },
       });
 
-      return providers;
+      // Parse apiConfig for models in providers
+      return providers.map(provider => ({
+        ...provider,
+        models: this.parseModelsApiConfig(provider.models),
+      }));
     } catch (error) {
       logger.error('Get providers error:', error);
       throw new AppError('Failed to get providers', 500);
@@ -63,7 +108,7 @@ class AIModelService {
         ],
       });
 
-      return models;
+      return this.parseModelsApiConfig(models);
     } catch (error) {
       if (error instanceof AppError) {
         throw error;
@@ -100,6 +145,9 @@ class AIModelService {
         ],
       });
 
+      // Parse apiConfig for all models
+      const parsedModels = this.parseModelsApiConfig(models);
+
       // Group by type
       const grouped = {
         llm: [],
@@ -108,7 +156,7 @@ class AIModelService {
         tts: [],
       };
 
-      models.forEach(model => {
+      parsedModels.forEach(model => {
         if (grouped[model.type]) {
           grouped[model.type].push(model);
         }
@@ -140,7 +188,7 @@ class AIModelService {
         throw new NotFoundError('Model not found');
       }
 
-      return model;
+      return this.parseModelsApiConfig(model);
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw error;
@@ -434,7 +482,7 @@ class AIModelService {
           { displayName: 'asc' },
         ],
       });
-      return models;
+      return this.parseModelsApiConfig(models);
     } catch (error) {
       logger.error('Get all models error:', error);
       throw new AppError('Failed to get models', 500);
@@ -449,7 +497,7 @@ class AIModelService {
   async createModel(modelData) {
     try {
       const prisma = getPrisma();
-      const { providerId, name, displayName, description, type, category, baseUrl, isActive = true, requiresKey = true } = modelData;
+      const { providerId, name, displayName, description, type, category, baseUrl, apiConfig, isActive = true, requiresKey = true } = modelData;
 
       if (!providerId || !name || !displayName || !type) {
         throw new AppError('Provider ID, name, displayName, and type are required', 400);
@@ -458,6 +506,27 @@ class AIModelService {
       const validTypes = ['llm', 'video', 'image', 'tts'];
       if (!validTypes.includes(type)) {
         throw new AppError(`Invalid model type. Must be one of: ${validTypes.join(', ')}`, 400);
+      }
+
+      // Validate apiConfig if provided (should be a valid JSON object)
+      let apiConfigString = null;
+      if (apiConfig !== undefined) {
+        if (apiConfig === null) {
+          apiConfigString = null;
+        } else if (typeof apiConfig === 'string') {
+          // If it's already a string, validate it's valid JSON
+          try {
+            JSON.parse(apiConfig);
+            apiConfigString = apiConfig;
+          } catch (e) {
+            throw new AppError('apiConfig must be a valid JSON string or object', 400);
+          }
+        } else if (typeof apiConfig === 'object') {
+          // If it's an object, stringify it
+          apiConfigString = JSON.stringify(apiConfig);
+        } else {
+          throw new AppError('apiConfig must be a JSON object or string', 400);
+        }
       }
 
       // Check if provider exists
@@ -478,6 +547,7 @@ class AIModelService {
           type,
           category: category || null,
           baseUrl: baseUrl || null,
+          apiConfig: apiConfigString,
           isActive: isActive !== undefined ? isActive : true,
           requiresKey: requiresKey !== undefined ? requiresKey : true,
         },
@@ -486,8 +556,18 @@ class AIModelService {
         },
       });
 
+      // Parse apiConfig back to object for response
+      const modelResponse = { ...model };
+      if (modelResponse.apiConfig) {
+        try {
+          modelResponse.apiConfig = JSON.parse(modelResponse.apiConfig);
+        } catch (e) {
+          // If parsing fails, keep as string
+        }
+      }
+
       logger.info(`Model created: ${model.displayName} (${model.id}) for provider ${provider.displayName}`);
-      return model;
+      return modelResponse;
     } catch (error) {
       if (error instanceof NotFoundError || error instanceof AppError) {
         throw error;
@@ -516,13 +596,34 @@ class AIModelService {
         throw new NotFoundError('Model not found');
       }
 
-      const { providerId, name, displayName, description, type, category, baseUrl, isActive, requiresKey } = modelData;
+      const { providerId, name, displayName, description, type, category, baseUrl, apiConfig, isActive, requiresKey } = modelData;
 
       // Validate type if provided
       if (type) {
         const validTypes = ['llm', 'video', 'image', 'tts'];
         if (!validTypes.includes(type)) {
           throw new AppError(`Invalid model type. Must be one of: ${validTypes.join(', ')}`, 400);
+        }
+      }
+
+      // Validate apiConfig if provided (should be a valid JSON object)
+      let apiConfigString = undefined;
+      if (apiConfig !== undefined) {
+        if (apiConfig === null) {
+          apiConfigString = null;
+        } else if (typeof apiConfig === 'string') {
+          // If it's already a string, validate it's valid JSON
+          try {
+            JSON.parse(apiConfig);
+            apiConfigString = apiConfig;
+          } catch (e) {
+            throw new AppError('apiConfig must be a valid JSON string or object', 400);
+          }
+        } else if (typeof apiConfig === 'object') {
+          // If it's an object, stringify it
+          apiConfigString = JSON.stringify(apiConfig);
+        } else {
+          throw new AppError('apiConfig must be a JSON object or string', 400);
         }
       }
 
@@ -545,6 +646,7 @@ class AIModelService {
       if (type !== undefined) updateData.type = type;
       if (category !== undefined) updateData.category = category;
       if (baseUrl !== undefined) updateData.baseUrl = baseUrl;
+      if (apiConfigString !== undefined) updateData.apiConfig = apiConfigString;
       if (isActive !== undefined) updateData.isActive = isActive;
       if (requiresKey !== undefined) updateData.requiresKey = requiresKey;
 
@@ -556,8 +658,18 @@ class AIModelService {
         },
       });
 
+      // Parse apiConfig back to object for response
+      const modelResponse = { ...model };
+      if (modelResponse.apiConfig) {
+        try {
+          modelResponse.apiConfig = JSON.parse(modelResponse.apiConfig);
+        } catch (e) {
+          // If parsing fails, keep as string
+        }
+      }
+
       logger.info(`Model updated: ${model.displayName} (${model.id})`);
-      return model;
+      return modelResponse;
     } catch (error) {
       if (error instanceof NotFoundError || error instanceof AppError) {
         throw error;

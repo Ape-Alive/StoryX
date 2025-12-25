@@ -70,6 +70,20 @@ class ProjectController {
         );
         ResponseUtil.success(res, project, 'Text processing started');
     });
+
+    /**
+     * Get project model apiConfig
+     * GET /api/projects/:id/model-api-config
+     */
+    getProjectModelApiConfig = asyncHandler(async (req, res) => {
+        const { modelType } = req.query;
+        const apiConfig = await projectService.getProjectModelApiConfig(
+            req.params.id,
+            modelType,
+            req.user.id
+        );
+        ResponseUtil.success(res, { apiConfig }, 'Model apiConfig retrieved successfully');
+    });
 }
 
 module.exports = new ProjectController();
