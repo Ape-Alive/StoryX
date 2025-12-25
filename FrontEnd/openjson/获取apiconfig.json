@@ -1,0 +1,185 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "默认模块",
+    "description": "StoryX Backend API - AI-powered animation video generation platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "StoryX Team"
+    },
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "tags": [
+    {
+      "name": "Projects"
+    }
+  ],
+  "paths": {
+    "/api/projects/{id}/model-api-config": {
+      "get": {
+        "summary": "获取项目指定类型模型的apiConfig",
+        "deprecated": false,
+        "description": "根据项目ID和模型类型获取当前项目使用的该类型模型的apiConfig配置",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "modelType",
+            "in": "query",
+            "description": "模型类型",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "llm",
+                "video",
+                "tts",
+                "image"
+              ]
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjY0NzQ5NiwiZXhwIjoxNzY3MjUyMjk2fQ.zFDC8yG3EAuXn7sv8Yd3XMVZ2KEOhTcuZ-MXmzAgdAs",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjY0NzQ5NiwiZXhwIjoxNzY3MjUyMjk2fQ.zFDC8yG3EAuXn7sv8Yd3XMVZ2KEOhTcuZ-MXmzAgdAs"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回apiConfig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "apiConfig": {
+                              "type": "object",
+                              "description": "API配置参数对象，如果项目未配置该类型模型则返回null",
+                              "properties": {},
+                              "nullable": true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "请求参数错误（模型类型无效）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Error message"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Success message"
+          },
+          "data": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      }
+    },
+    "responses": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}
