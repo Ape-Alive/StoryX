@@ -248,12 +248,16 @@ class MediaService {
      * @param {string} projectId - 项目ID
      * @param {string} novelId - 小说ID
      * @param {string} userId - 用户ID
-     * @param {Object} options - 选项 { actIds = [], concurrency = 3, apiConfig = {}, allowOverwrite = false }
+     * @param {Object} options - 选项 { actIds = [], sceneIds = [], concurrency = 3, apiConfig = {}, allowOverwrite = false, keepBoth = false, mergeShots = false, maxDuration = null, toleranceSec = 5 }
      * @returns {Promise<Object>} - 任务信息，包含按剧幕组织的任务列表
      */
     async generateShotsByActs(projectId, novelId, userId, options = {}) {
         const prisma = getPrisma();
-        const { actIds = [], concurrency = 3, apiConfig = {}, allowOverwrite = false, storageMode = 'download_upload', featurePromptId = null } = options;
+        const { actIds = [], sceneIds = [], concurrency = 3, apiConfig = {}, allowOverwrite = false, keepBoth = false, storageMode = 'download_upload', featurePromptId, mergeShots = false, maxDuration = null, toleranceSec = 5 } = options;
+
+        if (!featurePromptId) {
+            throw new AppError('featurePromptId is required', 400);
+        }
 
         try {
             // 验证项目和小说的权限
@@ -305,21 +309,127 @@ class MediaService {
                 ],
             });
 
-            // 收集所有需要生成的镜头，并按剧幕组织
+            // 收集所有需要生成的镜头
+            let shotsToGenerate = [];
             const shotsByAct = new Map(); // actId -> { act, shots: [] }
-            const shotsToGenerate = [];
-            // 收集所有角色ID用于批量查询
             const allCharacterIds = new Set();
 
-            for (const act of acts) {
-                const actShots = [];
+            // 如果传入了 sceneIds，优先使用 sceneIds（sceneIds 优先于 actIds）
+            if (sceneIds.length > 0) {
+                // 验证场景是否存在且属于项目
+                const scenes = await prisma.scene.findMany({
+                    where: {
+                        id: { in: sceneIds },
+                        projectId,
+                        userId,
+                    },
+                    include: {
+                        shots: {
+                            where: {
+                                novelId,
+                                projectId,
+                                userId,
+                            },
+                            orderBy: { order: 'asc' },
+                        },
+                    },
+                });
 
-                // 场景中的镜头
-                for (const actScene of act.scenes) {
-                    for (const shot of actScene.scene.shots) {
+                if (scenes.length !== sceneIds.length) {
+                    throw new AppError('Some scenes not found or do not belong to project', 404);
+                }
+
+                // 验证场景是否属于指定的小说（通过关联的剧幕）
+                const sceneActIds = new Set();
+                const actScenes = await prisma.actScene.findMany({
+                    where: {
+                        sceneId: { in: sceneIds },
+                    },
+                    include: {
+                        act: true,
+                    },
+                });
+
+                // 过滤出属于指定小说、项目和用户的剧幕
+                for (const actScene of actScenes) {
+                    if (actScene.act &&
+                        actScene.act.novelId === novelId &&
+                        actScene.act.projectId === projectId &&
+                        actScene.act.userId === userId) {
+                        sceneActIds.add(actScene.actId);
+                    }
+                }
+
+                if (sceneActIds.size === 0) {
+                    throw new AppError('Scenes do not belong to the specified novel', 404);
+                }
+
+                // 批量查询所有相关的剧幕（避免N+1查询）
+                const actIdsArray = Array.from(sceneActIds);
+                const actsMap = new Map();
+                if (actIdsArray.length > 0) {
+                    const acts = await prisma.act.findMany({
+                        where: {
+                            id: { in: actIdsArray },
+                            novelId,
+                            projectId,
+                            userId,
+                        },
+                    });
+                    acts.forEach(act => actsMap.set(act.id, act));
+                }
+
+                // 收集场景中的镜头
+                for (const scene of scenes) {
+                    for (const shot of scene.shots) {
+                        // 验证镜头是否属于指定的小说（通过关联的剧幕）
+                        const shotAct = actsMap.get(shot.actId);
+                        if (!shotAct) {
+                            continue; // 跳过不属于指定小说的镜头
+                        }
+
+                        // 过滤需要生成的镜头
                         const hasVideo = this.getShotVideoUrl(shot);
-                        if (allowOverwrite || !hasVideo) {
-                            const shotData = { shot, act, scene: actScene.scene };
+                        if (allowOverwrite || keepBoth || !hasVideo) {
+                            const shotData = { shot, act: shotAct, scene };
+                            shotsToGenerate.push(shotData);
+
+                            // 按剧幕组织镜头
+                            if (!shotsByAct.has(shotAct.id)) {
+                                shotsByAct.set(shotAct.id, { act: shotAct, shots: [] });
+                            }
+                            shotsByAct.get(shotAct.id).shots.push(shotData);
+
+                            // 收集角色ID
+                            const characterList = this.getShotCharacterIds(shot);
+                            characterList.forEach(char => allCharacterIds.add(char.id));
+                        }
+                    }
+                }
+            } else {
+                // 原有逻辑：按剧幕收集镜头
+                for (const act of acts) {
+                    const actShots = [];
+
+                    // 场景中的镜头
+                    for (const actScene of act.scenes) {
+                        for (const shot of actScene.scene.shots) {
+                            const hasVideo = this.getShotVideoUrl(shot);
+                            if (allowOverwrite || keepBoth || !hasVideo) {
+                                const shotData = { shot, act, scene: actScene.scene };
+                                shotsToGenerate.push(shotData);
+                                actShots.push(shotData);
+                                // 收集角色ID
+                                const characterList = this.getShotCharacterIds(shot);
+                                characterList.forEach(char => allCharacterIds.add(char.id));
+                            }
+                        }
+                    }
+                    // 直接关联到Act的镜头
+                    for (const shot of act.shots) {
+                        const hasVideo = this.getShotVideoUrl(shot);
+                        if (allowOverwrite || keepBoth || !hasVideo) {
+                            const shotData = { shot, act, scene: null };
                             shotsToGenerate.push(shotData);
                             actShots.push(shotData);
                             // 收集角色ID
@@ -327,23 +437,79 @@ class MediaService {
                             characterList.forEach(char => allCharacterIds.add(char.id));
                         }
                     }
-                }
-                // 直接关联到Act的镜头
-                for (const shot of act.shots) {
-                    const hasVideo = this.getShotVideoUrl(shot);
-                    if (allowOverwrite || !hasVideo) {
-                        const shotData = { shot, act, scene: null };
-                        shotsToGenerate.push(shotData);
-                        actShots.push(shotData);
-                        // 收集角色ID
-                        const characterList = this.getShotCharacterIds(shot);
-                        characterList.forEach(char => allCharacterIds.add(char.id));
+
+                    if (actShots.length > 0) {
+                        shotsByAct.set(act.id, { act, shots: actShots });
                     }
                 }
+            }
 
-                if (actShots.length > 0) {
-                    shotsByAct.set(act.id, { act, shots: actShots });
+            // 验证所有镜头都存在且属于项目/小说
+            if (shotsToGenerate.length > 0) {
+                const shotIds = shotsToGenerate.map(s => s.shot.id);
+                const validShots = await prisma.shot.findMany({
+                    where: {
+                        id: { in: shotIds },
+                        projectId,
+                        userId,
+                        novelId,
+                    },
+                });
+
+                if (validShots.length !== shotIds.length) {
+                    throw new AppError('Some shots not found or do not belong to project/novel', 404);
                 }
+            }
+
+            // 如果没有需要生成的镜头，返回提示信息
+            if (shotsToGenerate.length === 0) {
+                const allShotsCount = sceneIds.length > 0
+                    ? (await prisma.shot.count({
+                        where: {
+                            sceneId: { in: sceneIds },
+                            projectId,
+                            userId,
+                            novelId,
+                        },
+                    }))
+                    : (await prisma.shot.count({
+                        where: {
+                            actId: { in: actIds.length > 0 ? actIds : (await prisma.act.findMany({ where: { novelId, projectId, userId } })).map(a => a.id) },
+                            projectId,
+                            userId,
+                            novelId,
+                        },
+                    }));
+
+                const shotsWithVideo = sceneIds.length > 0
+                    ? (await prisma.shot.count({
+                        where: {
+                            sceneId: { in: sceneIds },
+                            projectId,
+                            userId,
+                            novelId,
+                            videoUrl: { not: null },
+                        },
+                    }))
+                    : (await prisma.shot.count({
+                        where: {
+                            actId: { in: actIds.length > 0 ? actIds : (await prisma.act.findMany({ where: { novelId, projectId, userId } })).map(a => a.id) },
+                            projectId,
+                            userId,
+                            novelId,
+                            videoUrl: { not: null },
+                        },
+                    }));
+
+                logger.info(`No shots to generate: ${allShotsCount} shot(s) found, ${shotsWithVideo} already have video. allowOverwrite=${allowOverwrite}, keepBoth=${keepBoth}`);
+                return {
+                    total: 0,
+                    acts: [],
+                    message: shotsWithVideo === allShotsCount
+                        ? 'All shots already have videos. Set allowOverwrite=true to regenerate.'
+                        : 'No shots match the generation criteria.',
+                    skipped: allShotsCount - shotsToGenerate.length,
+                };
             }
 
             // 批量查询所有角色（避免N+1查询）
@@ -353,6 +519,201 @@ class MediaService {
                     where: { id: { in: Array.from(allCharacterIds) } },
                 });
                 characters.forEach(char => charactersMap.set(char.id, char));
+            }
+
+            // 如果启用合并模式，进行自动分组
+            let shotGroups = [];
+            if (mergeShots) {
+                if (!maxDuration || maxDuration <= 0) {
+                    throw new AppError('maxDuration is required when mergeShots is true', 400);
+                }
+                if (toleranceSec < 0) {
+                    throw new AppError('toleranceSec must be non-negative', 400);
+                }
+
+                // 按 order 排序，确保相邻
+                const sortedShots = [...shotsToGenerate].sort((a, b) => {
+                    const orderA = a.shot.order !== null && a.shot.order !== undefined ? a.shot.order : a.shot.shotId || 0;
+                    const orderB = b.shot.order !== null && b.shot.order !== undefined ? b.shot.order : b.shot.shotId || 0;
+                    return orderA - orderB;
+                });
+
+                // 检查是否相邻（order 连续）
+                for (let i = 1; i < sortedShots.length; i++) {
+                    const prevOrder = sortedShots[i - 1].shot.order !== null && sortedShots[i - 1].shot.order !== undefined
+                        ? sortedShots[i - 1].shot.order
+                        : sortedShots[i - 1].shot.shotId || 0;
+                    const currOrder = sortedShots[i].shot.order !== null && sortedShots[i].shot.order !== undefined
+                        ? sortedShots[i].shot.order
+                        : sortedShots[i].shot.shotId || 0;
+                    if (currOrder - prevOrder > 1) {
+                        logger.warn(`Shots are not adjacent: gap between order ${prevOrder} and ${currOrder}`);
+                    }
+                }
+
+                // 自动分组
+                const minDuration = maxDuration - toleranceSec;
+                const maxDurationWithTolerance = maxDuration + toleranceSec;
+
+                // 如果传入 sceneIds，优先按 sceneId 分组，然后再按时长分组
+                if (sceneIds.length > 0) {
+                    // 按 sceneId 分组
+                    const shotsByScene = new Map();
+                    for (const shotData of sortedShots) {
+                        const shot = shotData.shot;
+                        const shotSceneId = shot.sceneId || shotData.scene?.id || null;
+                        if (!shotsByScene.has(shotSceneId)) {
+                            shotsByScene.set(shotSceneId, []);
+                        }
+                        shotsByScene.get(shotSceneId).push(shotData);
+                    }
+
+                    // 对每个 sceneId 的镜头按时长分组
+                    for (const [sceneId, sceneShots] of shotsByScene) {
+                        let currentGroup = [];
+                        let currentDuration = 0;
+
+                        for (const shotData of sceneShots) {
+                            const shot = shotData.shot;
+                            const shotDuration = shot.duration || 3; // 默认3秒
+
+                            // 如果单个镜头时长超过上限，单独成组
+                            if (shotDuration > maxDurationWithTolerance) {
+                                // 如果当前组有内容，先保存
+                                if (currentGroup.length > 0) {
+                                    shotGroups.push({
+                                        shots: [...currentGroup],
+                                        targetDuration: currentDuration,
+                                        sceneId: sceneId
+                                    });
+                                    currentGroup = [];
+                                    currentDuration = 0;
+                                }
+                                // 单个镜头成组
+                                shotGroups.push({
+                                    shots: [shotData],
+                                    targetDuration: shotDuration,
+                                    sceneId: sceneId
+                                });
+                                continue;
+                            }
+
+                            // 如果加入当前镜头会超过上限，先保存当前组
+                            if (currentDuration + shotDuration > maxDurationWithTolerance) {
+                                if (currentGroup.length > 0) {
+                                    shotGroups.push({
+                                        shots: [...currentGroup],
+                                        targetDuration: currentDuration,
+                                        sceneId: sceneId
+                                    });
+                                    currentGroup = [];
+                                    currentDuration = 0;
+                                }
+                            }
+
+                            // 加入当前镜头
+                            currentGroup.push(shotData);
+                            currentDuration += shotDuration;
+
+                            // 如果已达到或超过最小时长，可以考虑切组（但允许继续添加直到上限）
+                        }
+
+                        // 保存最后一组
+                        if (currentGroup.length > 0) {
+                            shotGroups.push({
+                                shots: [...currentGroup],
+                                targetDuration: currentDuration,
+                                sceneId: sceneId
+                            });
+                        }
+                    }
+                } else {
+                    // 原有逻辑：不按 sceneId 优先分组，只按时长分组
+                    let currentGroup = [];
+                    let currentDuration = 0;
+                    let currentSceneId = null; // 跟踪当前组的 sceneId
+
+                    for (const shotData of sortedShots) {
+                        const shot = shotData.shot;
+                        const shotDuration = shot.duration || 3; // 默认3秒
+                        const shotSceneId = shot.sceneId || shotData.scene?.id || null;
+
+                        // 如果单个镜头时长超过上限，单独成组
+                        if (shotDuration > maxDurationWithTolerance) {
+                            // 如果当前组有内容，先保存
+                            if (currentGroup.length > 0) {
+                                shotGroups.push({
+                                    shots: [...currentGroup],
+                                    targetDuration: currentDuration
+                                });
+                                currentGroup = [];
+                                currentDuration = 0;
+                                currentSceneId = null;
+                            }
+                            // 单个镜头成组
+                            shotGroups.push({
+                                shots: [shotData],
+                                targetDuration: shotDuration
+                            });
+                            continue;
+                        }
+
+                        // 检查 sceneId 是否一致：如果当前组不为空且 sceneId 不同，先保存当前组
+                        if (currentGroup.length > 0 && currentSceneId !== shotSceneId) {
+                            shotGroups.push({
+                                shots: [...currentGroup],
+                                targetDuration: currentDuration
+                            });
+                            currentGroup = [];
+                            currentDuration = 0;
+                            currentSceneId = null;
+                        }
+
+                        // 如果加入当前镜头会超过上限，先保存当前组
+                        if (currentDuration + shotDuration > maxDurationWithTolerance) {
+                            if (currentGroup.length > 0) {
+                                shotGroups.push({
+                                    shots: [...currentGroup],
+                                    targetDuration: currentDuration
+                                });
+                                currentGroup = [];
+                                currentDuration = 0;
+                                currentSceneId = null;
+                            }
+                        }
+
+                        // 加入当前镜头
+                        currentGroup.push(shotData);
+                        currentDuration += shotDuration;
+                        // 设置或更新当前组的 sceneId
+                        if (currentSceneId === null) {
+                            currentSceneId = shotSceneId;
+                        }
+
+                        // 如果已达到或超过最小时长，可以考虑切组（但允许继续添加直到上限）
+                        // 这里我们允许继续添加，直到达到上限
+                    }
+
+                    // 保存最后一组
+                    if (currentGroup.length > 0) {
+                        shotGroups.push({
+                            shots: [...currentGroup],
+                            targetDuration: currentDuration
+                        });
+                    }
+                }
+
+                logger.info(`Grouped ${sortedShots.length} shots into ${shotGroups.length} groups for merged video generation`);
+            } else {
+                // 不合并模式，每个镜头单独成组
+                shotGroups = shotsToGenerate.map(shotData => {
+                    const sceneId = shotData.shot.sceneId || shotData.scene?.id || null;
+                    return {
+                        shots: [shotData],
+                        targetDuration: shotData.shot.duration || 3,
+                        sceneId: sceneId
+                    };
+                });
             }
 
             // 获取项目配置和模型
@@ -387,36 +748,109 @@ class MediaService {
                 logger.warn(`Decrypt project video AI key failed, fallback to raw value: ${e.message}`);
             }
 
-            // 为每个镜头创建任务
-            const taskMap = new Map(); // shotId -> taskId
+            // 为每个组创建任务
+            const taskMap = new Map(); // groupIndex -> taskId
+            const taskInfoMap = new Map(); // taskId -> { taskId, shotIds, shotVideoName }
             const actTaskMap = new Map(); // actId -> [taskId, ...]
+            // 为每个组添加索引，方便后续查找
+            shotGroups.forEach((group, index) => {
+                group.groupIndex = index;
+            });
 
-            for (const { shot, act } of shotsToGenerate) {
+            for (let i = 0; i < shotGroups.length; i++) {
+                const group = shotGroups[i];
+                const firstShotData = group.shots[0];
+                const shotIds = group.shots.map(s => s.shot.id);
+                const firstShot = firstShotData.shot;
+                const scene = firstShotData.scene;
+
+                // 生成视频名称（用于前端展示）
+                let shotVideoName = '';
+                if (mergeShots && group.shots.length > 1) {
+                    // 合并模式：使用场景名称或剧幕名称 + 镜头数量
+                    if (scene && scene.address) {
+                        shotVideoName = `${scene.address}_合并${group.shots.length}个镜头`;
+                    } else if (firstShotData.act && firstShotData.act.actName) {
+                        shotVideoName = `${firstShotData.act.actName}_合并${group.shots.length}个镜头`;
+                    } else {
+                        shotVideoName = `合并视频_${group.shots.length}个镜头`;
+                    }
+                } else {
+                    // 单镜头模式：使用场景名称或镜头ID
+                    if (scene && scene.address) {
+                        shotVideoName = `${scene.address}_${firstShot.shotId || firstShot.id.substring(0, 8)}`;
+                    } else if (firstShot.shotId) {
+                        shotVideoName = firstShot.shotId;
+                    } else {
+                        shotVideoName = `镜头_${firstShot.id.substring(0, 8)}`;
+                    }
+                }
+
+                // 创建任务，metadata 中存储合并信息
+                const taskMetadata = {
+                    ...apiConfig,
+                    ...(mergeShots && {
+                        mergedShotIds: shotIds,
+                        targetDuration: group.targetDuration,
+                        groupIndex: i
+                    })
+                };
+
                 const task = await prisma.shotVideoTask.create({
                     data: {
-                        shotId: shot.id,
-                        actId: act.id,
+                        shotId: firstShot.id, // 使用第一个镜头ID作为主镜头ID
+                        actId: firstShotData.act?.id || firstShot.actId || null,
                         projectId,
                         novelId,
                         userId,
                         modelId: model.id,
-                        apiConfig: JSON.stringify(apiConfig),
+                        apiConfig: JSON.stringify(taskMetadata),
                         status: 'pending',
                     },
                 });
 
-                taskMap.set(shot.id, task.id);
+                taskMap.set(i, task.id);
 
-                if (!actTaskMap.has(act.id)) {
-                    actTaskMap.set(act.id, []);
+                // 存储任务详细信息
+                taskInfoMap.set(task.id, {
+                    taskId: task.id,
+                    shotIds: shotIds,
+                    shotVideoName: shotVideoName
+                });
+
+                // 按剧幕组织任务ID
+                const actId = firstShotData.act?.id || firstShot.actId;
+                if (actId) {
+                    if (!actTaskMap.has(actId)) {
+                        actTaskMap.set(actId, []);
+                    }
+                    actTaskMap.get(actId).push(task.id);
                 }
-                actTaskMap.get(act.id).push(task.id);
             }
 
-            // 将镜头分组为批次（批次间并发，批次内顺序）
+            // 将组分组为批次（批次间并发，批次内顺序）
             const batches = [];
-            for (let i = 0; i < shotsToGenerate.length; i += concurrency) {
-                batches.push(shotsToGenerate.slice(i, i + concurrency));
+            if (sceneIds.length > 0) {
+                // 当传入 sceneIds 时，按 sceneId 分组批次
+                // 一个 sceneId 的全部镜头组作为一个批次
+                const groupsByScene = new Map();
+                for (const group of shotGroups) {
+                    const sceneId = group.sceneId || group.shots[0]?.shot?.sceneId || group.shots[0]?.scene?.id || null;
+                    if (!groupsByScene.has(sceneId)) {
+                        groupsByScene.set(sceneId, []);
+                    }
+                    groupsByScene.get(sceneId).push(group);
+                }
+
+                // 每个 sceneId 的所有组作为一个批次
+                for (const [sceneId, sceneGroups] of groupsByScene) {
+                    batches.push(sceneGroups);
+                }
+            } else {
+                // 原有逻辑：按 concurrency 分组
+                for (let i = 0; i < shotGroups.length; i += concurrency) {
+                    batches.push(shotGroups.slice(i, i + concurrency));
+                }
             }
 
             // 异步执行生成任务（不等待完成）
@@ -424,10 +858,10 @@ class MediaService {
                 try {
                     // 批次间并发执行，每个批次内按顺序执行
                     const batchPromises = batches.map(async (batch) => {
-                        const batchResults = [];
                         // 批次内按顺序执行
-                        for (const { shot, act, scene } of batch) {
-                            const taskId = taskMap.get(shot.id);
+                        for (let groupIndex = 0; groupIndex < batch.length; groupIndex++) {
+                            const group = batch[groupIndex];
+                            const taskId = taskMap.get(group.groupIndex);
                             try {
                                 // 更新任务状态为processing
                                 await prisma.shotVideoTask.update({
@@ -435,9 +869,29 @@ class MediaService {
                                     data: { status: 'processing', startedAt: new Date() },
                                 });
 
-                                const result = await this.generateSingleShotVideo(
-                                    shot, act, scene, model, apiKey, apiConfig, userId, charactersMap, taskId, storageMode, featurePromptId
-                                );
+                                let result;
+                                if (mergeShots && group.shots.length > 1) {
+                                    // 合并模式：生成合并视频
+                                    // 需要为每个shot添加act和scene信息
+                                    const shots = group.shots.map(shotData => {
+                                        const shot = shotData.shot;
+                                        // 确保shot对象包含act和scene信息
+                                        return {
+                                            ...shot,
+                                            act: shotData.act,
+                                            scene: shotData.scene
+                                        };
+                                    });
+                                    result = await this.generateMergedShotVideo(
+                                        shots, group.targetDuration, model, apiKey, apiConfig, userId, charactersMap, taskId, storageMode, featurePromptId
+                                    );
+                                } else {
+                                    // 单镜头模式：生成单个视频
+                                    const shotData = group.shots[0];
+                                    result = await this.generateSingleShotVideo(
+                                        shotData.shot, shotData.act, shotData.scene, model, apiKey, apiConfig, userId, charactersMap, taskId, storageMode, featurePromptId
+                                    );
+                                }
 
                                 // 更新任务状态为completed
                                 await prisma.shotVideoTask.update({
@@ -451,10 +905,18 @@ class MediaService {
                                     },
                                 });
 
-                                batchResults.push({
-                                    status: 'fulfilled',
-                                    value: result,
-                                });
+                                // 如果是合并模式，将视频URL写回所有组内镜头
+                                if (mergeShots && group.shots.length > 1 && result.videoUrl) {
+                                    await prisma.shot.updateMany({
+                                        where: {
+                                            id: { in: group.shots.map(s => s.shot.id) }
+                                        },
+                                        data: {
+                                            videoUrl: result.videoUrl,
+                                            videoPath: result.videoPath
+                                        }
+                                    });
+                                }
                             } catch (error) {
                                 // 更新任务状态为failed
                                 await prisma.shotVideoTask.update({
@@ -465,14 +927,9 @@ class MediaService {
                                         completedAt: new Date(),
                                     },
                                 });
-
-                                batchResults.push({
-                                    status: 'rejected',
-                                    reason: error,
-                                });
+                                logger.error(`Generate shot video error for group ${group.groupIndex}:`, error);
                             }
                         }
-                        return batchResults;
                     });
 
                     // 等待所有批次完成
@@ -484,27 +941,89 @@ class MediaService {
 
             // 按剧幕组织返回结果
             const actTasks = [];
-            for (const [actId, { act }] of shotsByAct) {
-                const taskIds = actTaskMap.get(actId) || [];
-                actTasks.push({
-                    actId: act.id,
-                    actName: act.actName,
-                    order: act.order,
-                    startChapterOrder: act.startChapterOrder,
-                    taskIds,
+            if (shotsByAct.size > 0) {
+                // 如果有按剧幕组织的数据，使用原有逻辑
+                for (const [actId, { act }] of shotsByAct) {
+                    const taskIds = actTaskMap.get(actId) || [];
+                    if (taskIds.length > 0) {
+                        // 将 taskIds 转换为包含详细信息的对象数组
+                        const taskInfos = taskIds.map(taskId => {
+                            return taskInfoMap.get(taskId) || {
+                                taskId: taskId,
+                                shotIds: [],
+                                shotVideoName: ''
+                            };
+                        });
+
+                        actTasks.push({
+                            actId: act.id,
+                            actName: act.actName,
+                            order: act.order,
+                            startChapterOrder: act.startChapterOrder,
+                            taskIds: taskInfos,
+                        });
+                    }
+                }
+
+                // 按顺序排序
+                actTasks.sort((a, b) => {
+                    if (a.startChapterOrder !== b.startChapterOrder) {
+                        return a.startChapterOrder - b.startChapterOrder;
+                    }
+                    return a.order - b.order;
                 });
+            } else {
+                // 如果使用 sceneIds 模式，按任务组织返回
+                const allTaskIds = Array.from(taskMap.values());
+                if (allTaskIds.length > 0) {
+                    // 获取所有相关的剧幕信息
+                    const allActIds = new Set();
+                    shotGroups.forEach(group => {
+                        group.shots.forEach(shotData => {
+                            const actId = shotData.act?.id || shotData.shot.actId;
+                            if (actId) allActIds.add(actId);
+                        });
+                    });
+
+                    if (allActIds.size > 0) {
+                        const acts = await prisma.act.findMany({
+                            where: { id: { in: Array.from(allActIds) } },
+                        });
+
+                        for (const act of acts) {
+                            const taskIds = actTaskMap.get(act.id) || [];
+                            if (taskIds.length > 0) {
+                                // 将 taskIds 转换为包含详细信息的对象数组
+                                const taskInfos = taskIds.map(taskId => {
+                                    return taskInfoMap.get(taskId) || {
+                                        taskId: taskId,
+                                        shotIds: [],
+                                        shotVideoName: ''
+                                    };
+                                });
+
+                                actTasks.push({
+                                    actId: act.id,
+                                    actName: act.actName,
+                                    order: act.order,
+                                    startChapterOrder: act.startChapterOrder,
+                                    taskIds: taskInfos,
+                                });
+                            }
+                        }
+
+                        actTasks.sort((a, b) => {
+                            if (a.startChapterOrder !== b.startChapterOrder) {
+                                return a.startChapterOrder - b.startChapterOrder;
+                            }
+                            return a.order - b.order;
+                        });
+                    }
+                }
             }
 
-            // 按顺序排序
-            actTasks.sort((a, b) => {
-                if (a.startChapterOrder !== b.startChapterOrder) {
-                    return a.startChapterOrder - b.startChapterOrder;
-                }
-                return a.order - b.order;
-            });
-
             return {
-                total: shotsToGenerate.length,
+                total: shotGroups.length, // 返回组的数量
                 acts: actTasks,
             };
         } catch (error) {
@@ -2008,6 +2527,29 @@ class MediaService {
                 const group = shotGroups[i];
                 const shotIds = group.shots.map(s => s.id);
                 const firstShot = group.shots[0];
+                const scene = firstShot.scene;
+
+                // 生成视频名称（用于前端展示）
+                let shotVideoName = '';
+                if (mergeShots && group.shots.length > 1) {
+                    // 合并模式：使用场景名称或剧幕名称 + 镜头数量
+                    if (scene && scene.address) {
+                        shotVideoName = `${scene.address}_合并${group.shots.length}个镜头`;
+                    } else if (firstShot.act && firstShot.act.actName) {
+                        shotVideoName = `${firstShot.act.actName}_合并${group.shots.length}个镜头`;
+                    } else {
+                        shotVideoName = `合并视频_${group.shots.length}个镜头`;
+                    }
+                } else {
+                    // 单镜头模式：使用场景名称或镜头ID
+                    if (scene && scene.address) {
+                        shotVideoName = `${scene.address}_${firstShot.shotId || firstShot.id.substring(0, 8)}`;
+                    } else if (firstShot.shotId) {
+                        shotVideoName = firstShot.shotId;
+                    } else {
+                        shotVideoName = `镜头_${firstShot.id.substring(0, 8)}`;
+                    }
+                }
 
                 // 创建任务，metadata 中存储合并信息
                 const taskMetadata = {
@@ -2036,6 +2578,7 @@ class MediaService {
                 tasks.push({
                     taskId: task.id,
                     shotIds: shotIds,
+                    shotVideoName: shotVideoName,
                     targetDuration: group.targetDuration,
                     ...(mergeShots && { merged: true })
                 });

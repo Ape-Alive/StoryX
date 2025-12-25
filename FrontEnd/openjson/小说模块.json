@@ -1,0 +1,947 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "默认模块",
+    "description": "StoryX Backend API - AI-powered animation video generation platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "StoryX Team"
+    },
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "tags": [
+    {
+      "name": "Projects"
+    },
+    {
+      "name": "Novels"
+    }
+  ],
+  "paths": {
+    "/api/projects/{id}/novels": {
+      "get": {
+        "summary": "获取项目的所有小说",
+        "deprecated": false,
+        "description": "获取指定项目的所有小说列表",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回小说列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/chapters/{id}": {
+      "get": {
+        "summary": "获取章节内容",
+        "deprecated": false,
+        "description": "根据章节ID获取章节的完整内容",
+        "tags": [
+          "Novels"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "章节ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回章节内容",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {}
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "章节不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/text/upload": {
+      "post": {
+        "summary": "上传并解析整本小说",
+        "deprecated": false,
+        "description": "上传小说文件（TXT、EPUB、DOC），自动解析元数据和章节，保存到数据库和文件系统",
+        "tags": [
+          "Novels"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "小说文件（.txt, .epub, .doc, .docx）",
+                    "example": ""
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "description": "项目ID（必填）",
+                    "example": "3d202970-ef1e-417d-a741-092bf62a47a0"
+                  },
+                  "fileName": {
+                    "type": "string",
+                    "description": "文件名（可选，默认使用上传的文件名）",
+                    "example": "斗破苍穹.txt"
+                  },
+                  "encoding": {
+                    "type": "string",
+                    "description": "文件编码（可选，默认UTF-8，支持UTF-8、GBK等）",
+                    "example": "UTF-8"
+                  },
+                  "customTitle": {
+                    "type": "string",
+                    "description": "自定义书名（可选，如果提供则优先使用此名称）",
+                    "example": "斗破苍穹"
+                  }
+                },
+                "required": [
+                  "file",
+                  "projectId"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "小说上传并解析成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "novelId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "小说的唯一标识ID"
+                            },
+                            "title": {
+                              "type": "string",
+                              "description": "书名"
+                            },
+                            "author": {
+                              "type": "string",
+                              "description": "作者名称"
+                            },
+                            "coverUrl": {
+                              "type": "string",
+                              "description": "封面图片URL",
+                              "nullable": true
+                            },
+                            "summary": {
+                              "type": "string",
+                              "description": "小说简介"
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              },
+                              "description": "标签列表"
+                            },
+                            "totalChapters": {
+                              "type": "integer",
+                              "description": "总章节数"
+                            },
+                            "chapterList": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "chapterId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "chapterTitle": {
+                                    "type": "string"
+                                  },
+                                  "order": {
+                                    "type": "integer"
+                                  },
+                                  "wordCount": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/text/paste": {
+      "post": {
+        "summary": "上传并解析文本粘贴片段",
+        "deprecated": false,
+        "description": "上传文本片段，可以选择扩写后解析或直接解析分割成章节。需要填写书本基本信息和存储方式。",
+        "tags": [
+          "Novels"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "text",
+                  "projectId",
+                  "storageLocation"
+                ],
+                "properties": {
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "项目ID（必填）"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "文本内容（必填）"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "书名（可选）"
+                  },
+                  "author": {
+                    "type": "string",
+                    "description": "作者名称（可选）"
+                  },
+                  "summary": {
+                    "type": "string",
+                    "description": "简介（可选）"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "标签列表（可选）"
+                  },
+                  "coverUrl": {
+                    "type": "string",
+                    "description": "封面URL或文件路径（可选）"
+                  },
+                  "storageLocation": {
+                    "type": "string",
+                    "enum": [
+                      "local",
+                      "remote"
+                    ],
+                    "description": "存储位置（必填，local 或 remote）"
+                  },
+                  "expandText": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否扩写（默认false，直接分割章节；true则先扩写再分割）"
+                  },
+                  "modelId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "LLM模型ID（可选，如果expandText为true且未指定，则使用项目配置的模型或第一个可用模型）"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "文本上传并解析成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "novelId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "title": {
+                              "type": "string"
+                            },
+                            "author": {
+                              "type": "string"
+                            },
+                            "coverUrl": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "summary": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "totalChapters": {
+                              "type": "integer"
+                            },
+                            "chapterList": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "chapterId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "chapterTitle": {
+                                    "type": "string"
+                                  },
+                                  "order": {
+                                    "type": "integer"
+                                  },
+                                  "wordCount": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/novels": {
+      "get": {
+        "summary": "获取当前用户的小说列表",
+        "deprecated": false,
+        "description": "获取当前用户的小说列表，可以通过 projectId 查询参数筛选指定项目的小说",
+        "tags": [
+          "Novels"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "query",
+            "description": "项目ID（可选），如果提供则只返回该项目的小说",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回小说列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "项目不存在（当提供了 projectId 时）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/novels/{id}/chapters": {
+      "get": {
+        "summary": "获取小说的章节列表",
+        "deprecated": false,
+        "description": "根据小说ID获取该小说的所有章节列表（不包含章节内容）",
+        "tags": [
+          "Novels"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "小说ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回章节列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "chapterId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "chapterTitle": {
+                                "type": "string"
+                              },
+                              "order": {
+                                "type": "integer"
+                              },
+                              "wordCount": {
+                                "type": "integer"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "小说不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/novels/{id}": {
+      "get": {
+        "summary": "获取小说详情",
+        "deprecated": false,
+        "description": "根据小说ID获取小说详细信息（不包含章节列表，章节列表请使用 /api/novels/{id}/chapters 接口）。如果提供了 chapterId 查询参数，则同时返回该章节的详情（包括章节内容）。",
+        "tags": [
+          "Novels"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "小说ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "chapterId",
+            "in": "query",
+            "description": "章节ID（可选），如果提供则返回该章节的详情（包括章节内容）",
+            "required": false,
+            "example": "723a5193-ffc7-458c-9b63-184cc44ad33b",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回小说详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            {
+                              "type": "object",
+                              "properties": {}
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "chapter": {
+                                  "type": "object",
+                                  "description": "章节详情（仅在提供了 chapterId 参数时返回）",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "title": {
+                                      "type": "string"
+                                    },
+                                    "order": {
+                                      "type": "integer"
+                                    },
+                                    "wordCount": {
+                                      "type": "integer"
+                                    },
+                                    "content": {
+                                      "type": "string",
+                                      "description": "章节内容"
+                                    },
+                                    "createdAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    },
+                                    "updatedAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "小说不存在或章节不存在（当提供了 chapterId 时）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除整本小说",
+        "deprecated": false,
+        "description": "删除指定的小说及其所有关联数据，包括章节记录和文件系统中的所有文件",
+        "tags": [
+          "Novels"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "小说ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "小说删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "403": {
+            "description": "无权限删除该小说",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "小说不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Error message"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Success message"
+          },
+          "data": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      }
+    },
+    "responses": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

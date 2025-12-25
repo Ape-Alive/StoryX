@@ -1,0 +1,226 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "默认模块",
+    "description": "StoryX Backend API - AI-powered animation video generation platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "StoryX Team"
+    },
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "tags": [
+    {
+      "name": "Media"
+    }
+  ],
+  "paths": {
+    "/api/media/projects/{projectId}/novels/{novelId}/generate-shots": {
+      "post": {
+        "summary": "按剧幕或场景生成镜头视频",
+        "deprecated": false,
+        "description": "按剧幕或场景生成镜头视频，支持合并模式和场景批次处理。sceneIds 优先于 actIds（如果同时传入，使用 sceneIds）",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "novelId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sceneIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "场景ID数组，优先于 actIds（如果同时传入，使用 sceneIds）。当传入 sceneIds 时，每个 sceneId 的所有镜头作为一个批次",
+                    "example": [
+                      "scene-uuid-1",
+                      "scene-uuid-2"
+                    ]
+                  },
+                  "actIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "剧幕ID数组，如果 sceneIds 为空则使用此参数。如果为空则生成所有剧幕下的镜头视频",
+                    "example": [
+                      "act-uuid-1",
+                      "act-uuid-2"
+                    ]
+                  },
+                  "concurrency": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "并发数（仅在 actIds 模式生效，sceneIds 模式按场景分组批次）"
+                  },
+                  "apiConfig": {
+                    "type": "object",
+                    "description": "自定义API参数",
+                    "properties": {}
+                  },
+                  "allowOverwrite": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否允许覆盖已生成的视频"
+                  },
+                  "keepBoth": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否保留旧版本（生成新版本但不删除旧版本）"
+                  },
+                  "storageMode": {
+                    "type": "string",
+                    "enum": [
+                      "download_upload",
+                      "buffer_upload"
+                    ],
+                    "default": "download_upload",
+                    "description": "存储方式，download_upload=下载到本地再上传到Catbox，buffer_upload=直接下载Buffer然后上传到Catbox"
+                  },
+                  "featurePromptId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "功能提示词ID（FeaturePrompt表的id），用于获取功能提示词，必填",
+                    "example": "feature-prompt-uuid"
+                  },
+                  "mergeShots": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否合并模式（将多个镜头合并生成一个视频）"
+                  },
+                  "maxDuration": {
+                    "type": "number",
+                    "description": "合并模式最大时长（秒），mergeShots=true 时必填",
+                    "example": 30
+                  },
+                  "toleranceSec": {
+                    "type": "number",
+                    "default": 5,
+                    "description": "合并模式时长容差（秒），实际时长范围是 maxDuration - toleranceSec 到 maxDuration + toleranceSec"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "生成任务已启动",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "总镜头数"
+                    },
+                    "acts": {
+                      "type": "array",
+                      "description": "按剧幕组织的任务列表",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "actId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "剧幕ID"
+                          },
+                          "actName": {
+                            "type": "string",
+                            "description": "剧幕名称"
+                          },
+                          "order": {
+                            "type": "integer",
+                            "description": "剧幕顺序"
+                          },
+                          "startChapterOrder": {
+                            "type": "integer",
+                            "description": "起始章节顺序"
+                          },
+                          "taskIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "description": "该剧幕下的镜头生成任务ID数组"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "responses": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

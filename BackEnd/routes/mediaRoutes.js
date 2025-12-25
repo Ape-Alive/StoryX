@@ -36,6 +36,254 @@ router.use(authenticate);
  *     responses:
  *       200:
  *         description: 成功返回剧幕列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             format: uuid
+ *                             description: 剧幕ID
+ *                           scriptTaskId:
+ *                             type: string
+ *                             format: uuid
+ *                             description: 关联的剧本生成任务ID
+ *                           novelId:
+ *                             type: string
+ *                             format: uuid
+ *                             description: 小说ID
+ *                           projectId:
+ *                             type: string
+ *                             format: uuid
+ *                             description: 项目ID
+ *                           actName:
+ *                             type: string
+ *                             description: 剧幕名称，如 "第一幕"
+ *                           content:
+ *                             type: string
+ *                             nullable: true
+ *                             description: 剧幕内容描述
+ *                           highlight:
+ *                             type: string
+ *                             nullable: true
+ *                             description: 爽点描述
+ *                           emotionalCurve:
+ *                             type: string
+ *                             nullable: true
+ *                             description: 情感曲线描述
+ *                           rhythm:
+ *                             type: string
+ *                             nullable: true
+ *                             description: 节奏描述
+ *                           chapterIds:
+ *                             type: array
+ *                             items:
+ *                               type: string
+ *                               format: uuid
+ *                             description: 关联的章节ID列表（数组）
+ *                           order:
+ *                             type: integer
+ *                             description: 剧幕顺序（在任务内的顺序）
+ *                           startChapterOrder:
+ *                             type: integer
+ *                             nullable: true
+ *                             description: 起始章节顺序号（用于按章节顺序排序）
+ *                           scenes:
+ *                             type: array
+ *                             description: 场景列表
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: string
+ *                                   format: uuid
+ *                                   description: 场景ID
+ *                                 address:
+ *                                   type: string
+ *                                   description: 场景地址/地点
+ *                                 sceneDescription:
+ *                                   type: string
+ *                                   nullable: true
+ *                                   description: 场景描述
+ *                                 sceneImage:
+ *                                   type: string
+ *                                   format: uri
+ *                                   nullable: true
+ *                                   description: 场景图片URL
+ *                                 order:
+ *                                   type: integer
+ *                                   description: 场景在剧幕中的顺序
+ *                                 shots:
+ *                                   type: array
+ *                                   description: 场景下的镜头列表
+ *                                   items:
+ *                                     type: object
+ *                                     properties:
+ *                                       id:
+ *                                         type: string
+ *                                         format: uuid
+ *                                         description: 镜头ID
+ *                                       sceneId:
+ *                                         type: string
+ *                                         format: uuid
+ *                                         nullable: true
+ *                                         description: 关联的场景ID
+ *                                       actId:
+ *                                         type: string
+ *                                         format: uuid
+ *                                         description: 关联的剧幕ID
+ *                                       shotId:
+ *                                         type: string
+ *                                         description: 镜头编号（格式：SHOT 001）
+ *                                       duration:
+ *                                         type: number
+ *                                         nullable: true
+ *                                         description: 镜头时长（秒）
+ *                                       shotType:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 镜头类型
+ *                                       framing:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 构图方式
+ *                                       cameraAngle:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 拍摄角度
+ *                                       cameraMovement:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 摄像机运动
+ *                                       characterAction:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 角色动作
+ *                                       action:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 动作描述
+ *                                       expression:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 表情
+ *                                       dialogue:
+ *                                         type: array
+ *                                         description: 对话/台词列表
+ *                                         items:
+ *                                           type: object
+ *                                           properties:
+ *                                             characterId:
+ *                                               type: string
+ *                                               format: uuid
+ *                                               nullable: true
+ *                                             characterName:
+ *                                               type: string
+ *                                               nullable: true
+ *                                             text:
+ *                                               type: string
+ *                                             emotion:
+ *                                               type: string
+ *                                               nullable: true
+ *                                             audioUrl:
+ *                                               type: string
+ *                                               format: uri
+ *                                               nullable: true
+ *                                       voiceover:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 旁白
+ *                                       lighting:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 灯光
+ *                                       atmosphere:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 氛围
+ *                                       bgm:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 背景音乐
+ *                                       fx:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 特效
+ *                                       soundEffect:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 音效
+ *                                       isTransition:
+ *                                         type: boolean
+ *                                         description: 是否为转场镜头
+ *                                       characterIds:
+ *                                         type: array
+ *                                         description: 角色ID列表
+ *                                         items:
+ *                                           type: string
+ *                                           format: uuid
+ *                                       characterList:
+ *                                         type: array
+ *                                         description: 角色列表（包含id、name、gender）
+ *                                         items:
+ *                                           type: object
+ *                                           properties:
+ *                                             id:
+ *                                               type: string
+ *                                               format: uuid
+ *                                             name:
+ *                                               type: string
+ *                                             gender:
+ *                                               type: string
+ *                                               nullable: true
+ *                                       metadata:
+ *                                         type: object
+ *                                         description: 元数据
+ *                                         additionalProperties: true
+ *                                       order:
+ *                                         type: integer
+ *                                         description: 镜头顺序
+ *                                       videoUrl:
+ *                                         type: string
+ *                                         format: uri
+ *                                         nullable: true
+ *                                         description: 视频URL
+ *                                       videoPath:
+ *                                         type: string
+ *                                         nullable: true
+ *                                         description: 视频本地路径
+ *                                       createdAt:
+ *                                         type: string
+ *                                         format: date-time
+ *                                       updatedAt:
+ *                                         type: string
+ *                                         format: date-time
+ *                           directShots:
+ *                             type: array
+ *                             description: 直接关联到剧幕的镜头列表（没有场景的镜头）
+ *                             items:
+ *                               type: object
+ *                               description: 镜头对象（结构同scenes[].shots[]中的镜头对象）
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *       404:
+ *         description: 项目或小说不存在
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/projects/:projectId/novels/:novelId/acts', mediaController.getNovelActsWithDetails);
 
@@ -43,8 +291,8 @@ router.get('/projects/:projectId/novels/:novelId/acts', mediaController.getNovel
  * @swagger
  * /api/media/projects/{projectId}/novels/{novelId}/generate-shots:
  *   post:
- *     summary: 按剧幕依次生成镜头视频
- *     description: 按剧幕顺序依次生成镜头视频，支持并发
+ *     summary: 按剧幕或场景生成镜头视频
+ *     description: 按剧幕或场景生成镜头视频，支持合并模式和场景批次处理。sceneIds 优先于 actIds（如果同时传入，使用 sceneIds）
  *     tags: [Media]
  *     security:
  *       - bearerAuth: []
@@ -68,17 +316,24 @@ router.get('/projects/:projectId/novels/:novelId/acts', mediaController.getNovel
  *           schema:
  *             type: object
  *             properties:
+ *               sceneIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 description: 场景ID数组，优先于 actIds（如果同时传入，使用 sceneIds）。当传入 sceneIds 时，每个 sceneId 的所有镜头作为一个批次
+ *                 example: ["scene-uuid-1", "scene-uuid-2"]
  *               actIds:
  *                 type: array
  *                 items:
  *                   type: string
  *                   format: uuid
- *                 description: 剧幕ID数组，如果为空则生成所有剧幕下的镜头视频
+ *                 description: 剧幕ID数组，如果 sceneIds 为空则使用此参数。如果为空则生成所有剧幕下的镜头视频
  *                 example: ["act-uuid-1", "act-uuid-2"]
  *               concurrency:
  *                 type: integer
  *                 default: 3
- *                 description: 并发数
+ *                 description: 并发数（仅在 actIds 模式生效，sceneIds 模式按场景分组批次）
  *               apiConfig:
  *                 type: object
  *                 description: 自定义API参数
@@ -86,6 +341,10 @@ router.get('/projects/:projectId/novels/:novelId/acts', mediaController.getNovel
  *                 type: boolean
  *                 default: false
  *                 description: 是否允许覆盖已生成的视频
+ *               keepBoth:
+ *                 type: boolean
+ *                 default: false
+ *                 description: 是否保留旧版本（生成新版本但不删除旧版本）
  *               storageMode:
  *                 type: string
  *                 enum: [download_upload, buffer_upload]
@@ -94,8 +353,21 @@ router.get('/projects/:projectId/novels/:novelId/acts', mediaController.getNovel
  *               featurePromptId:
  *                 type: string
  *                 format: uuid
- *                 description: 功能提示词ID（FeaturePrompt表的id），用于获取功能提示词
+ *                 required: true
+ *                 description: 功能提示词ID（FeaturePrompt表的id），用于获取功能提示词，必填
  *                 example: feature-prompt-uuid
+ *               mergeShots:
+ *                 type: boolean
+ *                 default: false
+ *                 description: 是否合并模式（将多个镜头合并生成一个视频）
+ *               maxDuration:
+ *                 type: number
+ *                 description: 合并模式最大时长（秒），mergeShots=true 时必填
+ *                 example: 30
+ *               toleranceSec:
+ *                 type: number
+ *                 default: 5
+ *                 description: 合并模式时长容差（秒），实际时长范围是 maxDuration - toleranceSec 到 maxDuration + toleranceSec
  *     responses:
  *       201:
  *         description: 生成任务已启动
@@ -129,9 +401,22 @@ router.get('/projects/:projectId/novels/:novelId/acts', mediaController.getNovel
  *                       taskIds:
  *                         type: array
  *                         items:
- *                           type: string
- *                           format: uuid
- *                         description: 该剧幕下的镜头生成任务ID数组
+ *                           type: object
+ *                           properties:
+ *                             taskId:
+ *                               type: string
+ *                               format: uuid
+ *                               description: 任务ID
+ *                             shotIds:
+ *                               type: array
+ *                               items:
+ *                                 type: string
+ *                                 format: uuid
+ *                               description: 该任务关联的镜头ID数组
+ *                             shotVideoName:
+ *                               type: string
+ *                               description: 视频名称（用于前端展示）
+ *                         description: 该剧幕下的镜头生成任务列表
  */
 router.post('/projects/:projectId/novels/:novelId/generate-shots', mediaController.generateShotsByActs);
 
@@ -211,6 +496,39 @@ router.post('/projects/:projectId/novels/:novelId/generate-shots', mediaControll
  *     responses:
  *       201:
  *         description: 生成任务已启动
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total:
+ *                   type: integer
+ *                   description: 任务总数（组的数量）
+ *                 tasks:
+ *                   type: array
+ *                   description: 任务列表
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       taskId:
+ *                         type: string
+ *                         format: uuid
+ *                         description: 任务ID
+ *                       shotIds:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                           format: uuid
+ *                         description: 该任务关联的镜头ID数组
+ *                       shotVideoName:
+ *                         type: string
+ *                         description: 视频名称（用于前端展示）
+ *                       targetDuration:
+ *                         type: number
+ *                         description: 目标时长（秒）
+ *                       merged:
+ *                         type: boolean
+ *                         description: 是否为合并模式（仅合并模式时存在）
  */
 router.post(
     '/projects/:projectId/shots/generate',

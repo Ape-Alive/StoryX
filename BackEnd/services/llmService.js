@@ -497,11 +497,11 @@ class LLMService {
                     }
 
                     // 步骤2: 修复字符串值中的中文引号和未转义字符
-                    // 使用状态机方法：逐字符处理，正确处理嵌套的引号
+                    // 改进的状态机：同时识别标准引号和中文引号作为字符串边界
                     let result = '';
                     let inString = false;
                     let escapeNext = false;
-                    let stringStart = -1;
+                    let stringQuoteType = null; // 记录当前字符串使用的引号类型: '"', '"', or '"'
 
                     for (let i = 0; i < fixed.length; i++) {
                         const char = fixed[i];
@@ -521,24 +521,39 @@ class LLMService {
                             continue;
                         }
 
-                        if (char === '"' && !escapeNext) {
+                        // 检查是否是引号字符（标准引号或中文引号）
+                        const isStandardQuote = char === '"';
+                        const isChineseLeftQuote = char === '"';
+                        const isChineseRightQuote = char === '"';
+
+                        if (isStandardQuote || isChineseLeftQuote || isChineseRightQuote) {
                             if (!inString) {
-                                // 字符串开始
+                                // 字符串开始：统一使用标准引号
                                 inString = true;
-                                stringStart = result.length;
-                                result += char;
+                                stringQuoteType = isStandardQuote ? '"' : (isChineseLeftQuote ? '"' : '"');
+                                result += '"'; // 统一使用标准引号
+                                continue;
                             } else {
-                                // 字符串结束
-                                inString = false;
-                                result += char;
+                                // 检查是否是当前字符串的结束引号
+                                if ((isStandardQuote && stringQuoteType === '"') ||
+                                    (isChineseRightQuote && (stringQuoteType === '"' || stringQuoteType === '"'))) {
+                                    // 字符串结束
+                                    inString = false;
+                                    stringQuoteType = null;
+                                    result += '"'; // 统一使用标准引号
+                                    continue;
+                                } else {
+                                    // 字符串内部的其他引号，需要转义
+                                    result += '\\"';
+                                    continue;
+                                }
                             }
-                            continue;
                         }
 
                         if (inString) {
                             // 在字符串内部
-                            if (char === '"' || char === '"') {
-                                // 中文引号，需要转义
+                            if (isChineseLeftQuote || isChineseRightQuote) {
+                                // 字符串内部的中文引号，转义为标准引号
                                 result += '\\"';
                             } else if (char === '\n' && prevChar !== '\\') {
                                 // 未转义的换行符
@@ -554,13 +569,18 @@ class LLMService {
                             }
                         } else {
                             // 不在字符串内部
-                            if (char === '"' || char === '"') {
+                            if (isChineseLeftQuote || isChineseRightQuote) {
                                 // 键名边界的中文引号，替换为标准引号
                                 result += '"';
                             } else {
                                 result += char;
                             }
                         }
+                    }
+
+                    // 如果最后还在字符串中，说明引号不匹配，尝试修复
+                    if (inString) {
+                        result += '"';
                     }
 
                     return result;
@@ -596,7 +616,7 @@ class LLMService {
                     });
                 }
 
-                // 策略3: 更简单的修复（全局替换中文引号）
+                // 策略3: 更智能的修复（先尝试修复，再全局替换）
                 try {
                     let cleanedContent = content;
 
@@ -611,14 +631,121 @@ class LLMService {
                         }
                     }
 
-                    // 简单替换：将所有中文引号替换为标准引号（这可能会破坏包含中文引号的字符串值）
-                    // 但作为最后的尝试
+                    // 先尝试使用改进的fixJSONString
+                    cleanedContent = fixJSONString(cleanedContent);
+
+                    // 如果还是失败，尝试更激进的修复：在键名和值边界替换中文引号
+                    // 使用正则表达式匹配键名和值边界的中文引号
+                    // 匹配模式: "key": "value" 或 "key": "value"
                     cleanedContent = cleanedContent
+                        // 替换键名边界的中文引号
+                        .replace(/([{,]\s*)"/g, '$1"')
+                        .replace(/"(\s*:)/g, '"$1')
+                        // 替换值边界的中文引号（在冒号后）
+                        .replace(/(:\s*)"/g, '$1"')
+                        .replace(/"(\s*[,}])/g, '"$1')
+                        // 替换所有剩余的中文引号（作为最后手段）
                         .replace(/"/g, '"')
                         .replace(/"/g, '"');
 
                     parsedData = JSON.parse(cleanedContent);
-                    logger.info('Successfully parsed JSON after simple replacement');
+                    logger.info('Successfully parsed JSON after enhanced replacement');
+                    return parsedData;
+                } catch (e) {
+                    lastError = e;
+                }
+
+                // 策略4: 尝试提取并修复JSON（使用更智能的引号匹配）
+                try {
+                    let cleanedContent = content;
+
+                    // 提取JSON部分
+                    const codeBlockMatch = cleanedContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                    if (codeBlockMatch) {
+                        cleanedContent = codeBlockMatch[1].trim();
+                    } else {
+                        const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            cleanedContent = jsonMatch[0];
+                        }
+                    }
+
+                    // 使用更智能的方法：先识别所有可能的键值对边界
+                    // 然后只在边界处替换中文引号，字符串值内部的中文引号转义
+                    let result = '';
+                    let inString = false;
+                    let escapeNext = false;
+                    let stringDelimiter = null; // 记录当前字符串的引号类型
+
+                    for (let i = 0; i < cleanedContent.length; i++) {
+                        const char = cleanedContent[i];
+                        const nextChar = i < cleanedContent.length - 1 ? cleanedContent[i + 1] : '';
+                        const prevChar = i > 0 ? cleanedContent[i - 1] : '';
+
+                        if (escapeNext) {
+                            result += char;
+                            escapeNext = false;
+                            continue;
+                        }
+
+                        if (char === '\\') {
+                            result += char;
+                            escapeNext = true;
+                            continue;
+                        }
+
+                        // 检查引号
+                        if (char === '"' || char === '"' || char === '"') {
+                            if (!inString) {
+                                // 字符串开始：检查上下文判断是否是键名或值
+                                inString = true;
+                                stringDelimiter = char;
+                                result += '"'; // 统一使用标准引号
+                            } else {
+                                // 检查是否是匹配的结束引号
+                                if ((char === '"' && stringDelimiter === '"') ||
+                                    (char === '"' && (stringDelimiter === '"' || stringDelimiter === '"')) ||
+                                    (char === '"' && (stringDelimiter === '"' || stringDelimiter === '"'))) {
+                                    // 字符串结束
+                                    inString = false;
+                                    stringDelimiter = null;
+                                    result += '"';
+                                } else {
+                                    // 字符串内部的其他引号，转义
+                                    result += '\\"';
+                                }
+                            }
+                            continue;
+                        }
+
+                        if (inString) {
+                            // 字符串内部：转义特殊字符
+                            if (char === '\n' && prevChar !== '\\') {
+                                result += '\\n';
+                            } else if (char === '\r' && prevChar !== '\\') {
+                                result += '\\r';
+                            } else if (char === '\t' && prevChar !== '\\') {
+                                result += '\\t';
+                            } else {
+                                result += char;
+                            }
+                        } else {
+                            // 字符串外部：替换中文引号为标准引号
+                            if (char === '"' || char === '"') {
+                                result += '"';
+                            } else {
+                                result += char;
+                            }
+                        }
+                    }
+
+                    // 如果最后还在字符串中，添加结束引号
+                    if (inString) {
+                        result += '"';
+                    }
+
+                    parsedData = JSON.parse(result);
+                    logger.info('Successfully parsed JSON after smart quote matching');
                     return parsedData;
                 } catch (e) {
                     lastError = e;

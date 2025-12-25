@@ -101,13 +101,54 @@ class SystemPromptController {
     /**
      * 获取功能提示词列表
      * GET /api/system-prompts/:systemPromptId/feature-prompts
-     * 可选 query: functionType
+     * 可选 query: functionType, functionKey
+     * 当 systemPromptId 和 functionKey 都存在时，优先使用 systemPromptId
+     * 如果 systemPromptId 不是有效的 UUID，则使用 functionKey 查询
      */
     getFeaturePrompts = asyncHandler(async (req, res) => {
         const { systemPromptId } = req.params;
-        const { functionType } = req.query;
+        const { functionType, functionKey } = req.query;
+
+        // UUID 格式验证正则表达式
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+        let finalSystemPromptId = null;
+        let finalFunctionKey = null;
+
+        // 检查 systemPromptId 是否是有效的 UUID
+        if (systemPromptId && uuidRegex.test(systemPromptId)) {
+            // 优先使用 systemPromptId（如果它是有效的 UUID）
+            finalSystemPromptId = systemPromptId;
+        } else if (functionKey) {
+            // 如果 systemPromptId 不是有效的 UUID，使用 functionKey
+            finalFunctionKey = functionKey;
+        } else {
+            // 如果 systemPromptId 不是有效的 UUID 且没有提供 functionKey，返回错误
+            return ResponseUtil.error(res, 'Either a valid systemPromptId (UUID) or functionKey (query parameter) is required', 400);
+        }
+
         const list = await systemPromptService.getFeaturePrompts({
-            systemPromptId,
+            systemPromptId: finalSystemPromptId,
+            functionKey: finalFunctionKey,
+            functionType,
+        });
+        ResponseUtil.success(res, list, 'Feature prompts retrieved successfully');
+    });
+
+    /**
+     * 获取功能提示词列表（通过 functionKey，不需要 systemPromptId）
+     * GET /api/system-prompts/feature-prompts?functionKey=xxx
+     * 可选 query: functionType
+     */
+    getFeaturePromptsByFunctionKey = asyncHandler(async (req, res) => {
+        const { functionKey, functionType } = req.query;
+
+        if (!functionKey) {
+            return ResponseUtil.error(res, 'functionKey is required', 400);
+        }
+
+        const list = await systemPromptService.getFeaturePrompts({
+            functionKey,
             functionType,
         });
         ResponseUtil.success(res, list, 'Feature prompts retrieved successfully');

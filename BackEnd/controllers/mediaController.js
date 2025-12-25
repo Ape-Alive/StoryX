@@ -22,17 +22,33 @@ class MediaController {
     generateShotsByActs = asyncHandler(async (req, res) => {
         const { projectId, novelId } = req.params;
         const userId = req.user.id;
-        const { actIds = [], concurrency = 3, apiConfig = {}, allowOverwrite = false, storageMode = 'download_upload', featurePromptId = null } = req.body;
+        const { actIds = [], sceneIds = [], concurrency = 3, apiConfig = {}, allowOverwrite = false, keepBoth = false, storageMode = 'download_upload', featurePromptId, mergeShots = false, maxDuration = null, toleranceSec = 5 } = req.body;
+
+        if (!featurePromptId) {
+            return ResponseUtil.error(res, 'featurePromptId is required', 400);
+        }
 
         const result = await mediaService.generateShotsByActs(projectId, novelId, userId, {
             actIds,
+            sceneIds,
             concurrency,
             apiConfig,
             allowOverwrite,
+            keepBoth,
             storageMode,
             featurePromptId,
+            mergeShots,
+            maxDuration,
+            toleranceSec,
         });
-        ResponseUtil.success(res, result, 'Shot generation started successfully', 201);
+
+        // 根据返回结果设置消息
+        const message = result.total === 0 && result.message
+            ? result.message
+            : result.total > 0
+                ? `Shot generation started successfully. ${result.total} task(s) created.`
+                : 'Shot generation started successfully';
+        ResponseUtil.success(res, result, message, 201);
     });
 
     /**

@@ -8,6 +8,38 @@ const novelService = require('./novelService');
 const characterService = require('./characterService');
 
 /**
+ * 生成唯一的 jobId（格式：JOB-xxxx）
+ * @returns {Promise<string>} - 生成的 jobId
+ */
+async function generateJobId() {
+    const prisma = getPrisma();
+
+    // 查询数据库中最大的 jobId
+    const lastBatch = await prisma.scriptTaskBatch.findFirst({
+        orderBy: { createdAt: 'desc' },
+        select: { jobId: true },
+    });
+
+    if (!lastBatch) {
+        // 如果没有记录，从 JOB-0001 开始
+        return 'JOB-0001';
+    }
+
+    // 提取数字部分
+    const match = lastBatch.jobId.match(/JOB-(\d+)/);
+    if (match) {
+        const lastNumber = parseInt(match[1], 10);
+        const nextNumber = lastNumber + 1;
+        // 格式化为4位数字，不足补0
+        return `JOB-${nextNumber.toString().padStart(4, '0')}`;
+    }
+
+    // 如果格式不匹配，使用时间戳生成
+    const timestamp = Date.now();
+    return `JOB-${timestamp.toString().slice(-4)}`;
+}
+
+/**
  * 安全地提取错误消息，避免循环引用问题
  * @param {Error} error - 错误对象
  * @returns {string} - 错误消息
@@ -143,6 +175,73 @@ class ScriptService {
                 taskType === 'by_chapters' ? chaptersPerTask : wordsPerTask
             );
 
+            // 检查是否存在相同章节的待处理或处理中的任务
+            const allChapterIds = availableChapters.map(ch => ch.id);
+            const existingTasks = await prisma.scriptTask.findMany({
+                where: {
+                    novelId,
+                    projectId,
+                    userId,
+                    status: {
+                        in: ['pending', 'processing'], // 只检查待处理和处理中的任务
+                    },
+                },
+            });
+
+            // 检查章节重叠
+            const overlappingTasks = [];
+            const newTaskGroups = [];
+
+            for (const group of taskGroups) {
+                const groupChapterIds = group.map(ch => ch.id);
+                const groupChapterIdsSet = new Set(groupChapterIds);
+
+                // 检查是否有现有任务包含相同的章节
+                const overlapping = existingTasks.filter(existingTask => {
+                    try {
+                        const existingChapterIds = JSON.parse(existingTask.chapterIds);
+                        // 检查是否有章节重叠
+                        return existingChapterIds.some(id => groupChapterIdsSet.has(id));
+                    } catch (e) {
+                        logger.warn(`Failed to parse chapterIds for task ${existingTask.id}:`, e);
+                        return false;
+                    }
+                });
+
+                if (overlapping.length > 0) {
+                    // 找到重叠的任务
+                    overlappingTasks.push({
+                        group,
+                        groupChapterIds,
+                        existingTasks: overlapping,
+                    });
+                    logger.warn(`Found overlapping tasks for chapters ${groupChapterIds.join(', ')}`, {
+                        novelId,
+                        existingTaskIds: overlapping.map(t => t.id),
+                        existingChapterRanges: overlapping.map(t => t.chapterRange),
+                    });
+                } else {
+                    // 没有重叠，可以创建新任务
+                    newTaskGroups.push(group);
+                }
+            }
+
+            // 如果有重叠的任务，记录警告但继续处理（可以选择抛出错误或跳过）
+            if (overlappingTasks.length > 0) {
+                logger.warn(`Found ${overlappingTasks.length} task groups with overlapping chapters`, {
+                    novelId,
+                    overlappingCount: overlappingTasks.length,
+                    totalGroups: taskGroups.length,
+                    message: 'Will create new tasks anyway. Existing tasks may need to be cancelled manually.',
+                });
+                // 注意：这里选择继续创建新任务，但会记录警告
+                // 如果需要阻止重复创建，可以取消下面的注释：
+                // throw new AppError(
+                //     `Found ${overlappingTasks.length} task groups with overlapping chapters. Please wait for existing tasks to complete or cancel them first.`,
+                //     409
+                // );
+            }
+
             // 获取项目的LLM配置
             const projectWithKeys = await projectService.getProjectWithKeys(projectId, userId);
 
@@ -163,10 +262,63 @@ class ScriptService {
                 model = models[0];
             }
 
-            // 创建任务
+            // 生成任务名称（如果未提供）
+            let taskName = config.taskName;
+            if (!taskName) {
+                if (availableChapters.length === novel.chapters.length) {
+                    taskName = '全本智能结构化';
+                } else if (availableChapters.length === 1) {
+                    taskName = `第${availableChapters[0].order}章结构化`;
+                } else {
+                    const firstOrder = availableChapters[0].order;
+                    const lastOrder = availableChapters[availableChapters.length - 1].order;
+                    taskName = `第${firstOrder}-${lastOrder}章结构化`;
+                }
+            }
+
+            // 生成 jobId
+            const jobId = await generateJobId();
+
+            // 创建任务批次
+            const batch = await prisma.scriptTaskBatch.create({
+                data: {
+                    jobId,
+                    taskName,
+                    novelId,
+                    projectId,
+                    userId,
+                    status: 'pending',
+                    progress: 0,
+                    totalTasks: 0, // 稍后更新
+                    completedTasks: 0,
+                    failedTasks: 0,
+                    config: JSON.stringify(config),
+                },
+            });
+
+            // 创建任务（只创建没有重叠的任务组，或者如果允许重叠则创建所有任务）
             const tasks = [];
-            for (let i = 0; i < taskGroups.length; i++) {
-                const group = taskGroups[i];
+            const groupsToProcess = overlappingTasks.length > 0 && config.skipOverlapping !== false
+                ? newTaskGroups  // 如果 skipOverlapping 为 true，只处理没有重叠的组
+                : taskGroups;     // 否则处理所有组（允许重叠）
+
+            // 更新批次的总任务数
+            await prisma.scriptTaskBatch.update({
+                where: { id: batch.id },
+                data: { totalTasks: groupsToProcess.length },
+            });
+
+            // 更新批次状态为 processing（因为即将开始处理）
+            await prisma.scriptTaskBatch.update({
+                where: { id: batch.id },
+                data: {
+                    status: 'processing',
+                    startedAt: new Date(),
+                },
+            });
+
+            for (let i = 0; i < groupsToProcess.length; i++) {
+                const group = groupsToProcess[i];
                 const chapterIds = group.map(ch => ch.id);
                 const chapterRange = this.formatChapterRange(group);
                 const totalWords = group.reduce((sum, ch) => sum + ch.wordCount, 0);
@@ -181,9 +333,10 @@ class ScriptService {
                     .map((ch, idx) => `## ${group[idx].title}\n\n${ch.content}`)
                     .join('\n\n');
 
-                // 创建任务记录
+                // 创建任务记录（关联到批次）
                 const task = await prisma.scriptTask.create({
                     data: {
+                        batchId: batch.id,
                         novelId,
                         projectId,
                         userId,
@@ -210,7 +363,8 @@ class ScriptService {
                     model.id,
                     projectWithKeys.configLLMKey,
                     model.baseUrl,
-                    model.provider.name
+                    model.provider.name,
+                    batch.id // 传递批次ID用于更新进度
                 ).catch(error => {
                     logger.error(`Script task ${task.id} processing error:`, error);
                     const errorMessage = getErrorMessage(error);
@@ -220,6 +374,11 @@ class ScriptService {
                             status: 'failed',
                             errorMessage: errorMessage,
                         },
+                    }).then(() => {
+                        // 更新批次统计
+                        this.updateBatchProgress(batch.id).catch(err => {
+                            logger.error(`Failed to update batch progress for batch ${batch.id}:`, err);
+                        });
                     });
                 });
             }
@@ -228,11 +387,24 @@ class ScriptService {
                 novelId,
                 taskCount: tasks.length,
                 taskType,
+                overlappingCount: overlappingTasks.length,
             });
 
             return {
+                batchId: batch.id,
+                jobId: batch.jobId,
+                taskName: batch.taskName,
                 tasks,
                 totalTasks: tasks.length,
+                overlappingTasks: overlappingTasks.length > 0 ? overlappingTasks.map(ot => ({
+                    chapterRange: this.formatChapterRange(ot.group),
+                    existingTaskIds: ot.existingTasks.map(t => t.id),
+                    existingChapterRanges: ot.existingTasks.map(t => t.chapterRange),
+                    existingStatuses: ot.existingTasks.map(t => t.status),
+                })) : [],
+                skippedGroups: overlappingTasks.length > 0 && config.skipOverlapping !== false
+                    ? overlappingTasks.length
+                    : 0,
             };
         } catch (error) {
             logger.error('Start script generation error:', error);
@@ -296,6 +468,64 @@ class ScriptService {
     }
 
     /**
+     * 更新批次进度和状态
+     * @param {string} batchId - 批次ID
+     */
+    async updateBatchProgress(batchId) {
+        const prisma = getPrisma();
+
+        try {
+            // 获取批次的所有子任务
+            const tasks = await prisma.scriptTask.findMany({
+                where: { batchId },
+                select: { status: true },
+            });
+
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.status === 'completed').length;
+            const failedTasks = tasks.filter(t => t.status === 'failed').length;
+            const processingTasks = tasks.filter(t => t.status === 'processing').length;
+            const pendingTasks = tasks.filter(t => t.status === 'pending').length;
+
+            // 计算进度
+            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+            // 判断批次状态
+            let batchStatus = 'pending';
+            if (completedTasks === totalTasks) {
+                batchStatus = 'completed';
+            } else if (failedTasks === totalTasks) {
+                batchStatus = 'failed';
+            } else if (processingTasks > 0 || completedTasks > 0 || failedTasks > 0) {
+                batchStatus = 'processing';
+            }
+
+            // 更新批次
+            const updateData = {
+                progress,
+                status: batchStatus,
+                completedTasks,
+                failedTasks,
+            };
+
+            // 如果所有任务完成或失败，设置完成时间
+            if (batchStatus === 'completed' || batchStatus === 'failed') {
+                updateData.completedAt = new Date();
+            }
+
+            await prisma.scriptTaskBatch.update({
+                where: { id: batchId },
+                data: updateData,
+            });
+
+            logger.info(`Batch ${batchId} progress updated: ${progress}% (${completedTasks}/${totalTasks} completed, ${failedTasks} failed)`);
+        } catch (error) {
+            logger.error(`Error updating batch progress for batch ${batchId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
      * 处理剧本生成任务
      * @param {string} taskId - 任务ID
      * @param {string} text - 文本内容
@@ -303,11 +533,22 @@ class ScriptService {
      * @param {string} apiKey - API密钥
      * @param {string} baseUrl - API基础URL
      * @param {string} providerName - 提供商名称
+     * @param {string} batchId - 批次ID（可选，用于更新批次进度）
      */
-    async processScriptTask(taskId, text, modelId, apiKey, baseUrl, providerName) {
+    async processScriptTask(taskId, text, modelId, apiKey, baseUrl, providerName, batchId = null) {
         const prisma = getPrisma();
 
         try {
+            // 获取任务信息（如果未提供 batchId，从任务中获取）
+            let actualBatchId = batchId;
+            if (!actualBatchId) {
+                const task = await prisma.scriptTask.findUnique({
+                    where: { id: taskId },
+                    select: { batchId: true },
+                });
+                actualBatchId = task?.batchId || null;
+            }
+
             // 更新任务状态为处理中
             await prisma.scriptTask.update({
                 where: { id: taskId },
@@ -317,6 +558,13 @@ class ScriptService {
                     startedAt: new Date(),
                 },
             });
+
+            // 更新批次进度
+            if (actualBatchId) {
+                await this.updateBatchProgress(actualBatchId).catch(err => {
+                    logger.error(`Failed to update batch progress:`, err);
+                });
+            }
 
             // 调用LLM生成结构化剧本
             const scriptData = await llmService.generateStructuredScript(
@@ -345,6 +593,13 @@ class ScriptService {
                     completedAt: new Date(),
                 },
             });
+
+            // 更新批次进度
+            if (actualBatchId) {
+                await this.updateBatchProgress(actualBatchId).catch(err => {
+                    logger.error(`Failed to update batch progress:`, err);
+                });
+            }
 
             // 并行处理角色数据（角色处理独立于剧幕处理）
             try {
@@ -376,6 +631,14 @@ class ScriptService {
         } catch (error) {
             logger.error(`Script task ${taskId} processing error:`, error);
             const errorMessage = getErrorMessage(error);
+
+            // 获取任务信息以获取 batchId
+            const task = await prisma.scriptTask.findUnique({
+                where: { id: taskId },
+                select: { batchId: true },
+            });
+            const actualBatchId = task?.batchId || batchId;
+
             await prisma.scriptTask.update({
                 where: { id: taskId },
                 data: {
@@ -384,6 +647,14 @@ class ScriptService {
                     progress: 0,
                 },
             });
+
+            // 更新批次进度
+            if (actualBatchId) {
+                await this.updateBatchProgress(actualBatchId).catch(err => {
+                    logger.error(`Failed to update batch progress:`, err);
+                });
+            }
+
             throw error;
         }
     }
@@ -2080,6 +2351,369 @@ class ScriptService {
         } catch (error) {
             logger.error(`Error processing shots from script:`, error);
             throw error;
+        }
+    }
+
+    /**
+     * 获取小说的所有剧本生成批次
+     * @param {string} novelId - 小说ID
+     * @param {string} userId - 用户ID
+     * @returns {Array} - 批次列表
+     */
+    async getNovelScriptBatches(novelId, userId) {
+        try {
+            const prisma = getPrisma();
+
+            // 验证小说属于用户
+            const novel = await prisma.novel.findFirst({
+                where: {
+                    id: novelId,
+                    userId,
+                },
+            });
+
+            if (!novel) {
+                throw new NotFoundError('Novel not found');
+            }
+
+            const batches = await prisma.scriptTaskBatch.findMany({
+                where: {
+                    novelId,
+                    userId,
+                },
+                orderBy: { createdAt: 'desc' },
+            });
+
+            return batches.map(batch => ({
+                batchId: batch.id,
+                jobId: batch.jobId,
+                taskName: batch.taskName,
+                status: batch.status,
+                progress: batch.progress,
+                totalTasks: batch.totalTasks,
+                completedTasks: batch.completedTasks,
+                failedTasks: batch.failedTasks,
+                startedAt: batch.startedAt,
+                completedAt: batch.completedAt,
+                createdAt: batch.createdAt,
+            }));
+        } catch (error) {
+            if (error instanceof NotFoundError) {
+                throw error;
+            }
+            logger.error('Get novel script batches error:', error);
+            throw new AppError('Failed to get script batches', 500);
+        }
+    }
+
+    /**
+     * 获取单个批次详情
+     * @param {string} batchId - 批次ID
+     * @param {string} userId - 用户ID
+     * @returns {Object} - 批次详情
+     */
+    async getScriptBatch(batchId, userId) {
+        try {
+            const prisma = getPrisma();
+
+            const batch = await prisma.scriptTaskBatch.findFirst({
+                where: {
+                    id: batchId,
+                    userId,
+                },
+                include: {
+                    scriptTasks: {
+                        orderBy: { createdAt: 'asc' },
+                        select: {
+                            id: true,
+                            chapterIds: true,
+                            chapterRange: true,
+                            wordCount: true,
+                            status: true,
+                            progress: true,
+                            errorMessage: true,
+                            startedAt: true,
+                            completedAt: true,
+                            createdAt: true,
+                        },
+                    },
+                },
+            });
+
+            if (!batch) {
+                throw new NotFoundError('Script batch not found');
+            }
+
+            // 为已完成的任务获取统计信息
+            const completedTaskIds = batch.scriptTasks
+                .filter(t => t.status === 'completed')
+                .map(t => t.id);
+
+            // 批量查询统计信息
+            const taskStatsMap = new Map();
+            if (completedTaskIds.length > 0) {
+                // 查询剧幕数量
+                const acts = await prisma.act.findMany({
+                    where: {
+                        scriptTaskId: { in: completedTaskIds },
+                    },
+                    select: {
+                        scriptTaskId: true,
+                        id: true,
+                    },
+                });
+
+                // 查询场景数量（通过 ActScene 关联）
+                const actIds = acts.map(a => a.id);
+                const actScenes = actIds.length > 0 ? await prisma.actScene.findMany({
+                    where: {
+                        actId: { in: actIds },
+                    },
+                    select: {
+                        actId: true,
+                        sceneId: true,
+                        order: true,
+                    },
+                    orderBy: { order: 'asc' },
+                }) : [];
+
+                // 获取唯一场景ID并查询场景详情
+                const uniqueSceneIds = actScenes.length > 0
+                    ? [...new Set(actScenes.map(s => s.sceneId))]
+                    : [];
+
+                const sceneDetails = uniqueSceneIds.length > 0 ? await prisma.scene.findMany({
+                    where: {
+                        id: { in: uniqueSceneIds },
+                    },
+                    select: {
+                        id: true,
+                        address: true,
+                        sceneDescription: true,
+                        sceneImage: true,
+                        order: true,
+                    },
+                }) : [];
+
+                // 查询镜头数量及详情（包含用于生成描述的字段）
+                const shots = actIds.length > 0 ? await prisma.shot.findMany({
+                    where: {
+                        actId: { in: actIds },
+                    },
+                    select: {
+                        actId: true,
+                        id: true,
+                        sceneId: true,
+                        duration: true,
+                        dialogue: true,
+                        order: true,
+                        shotType: true,
+                        framing: true,
+                        cameraAngle: true,
+                        cameraMovement: true,
+                        action: true,
+                        characterAction: true,
+                    },
+                }) : [];
+
+                // 按任务ID分组统计
+                for (const taskId of completedTaskIds) {
+                    const taskActs = acts.filter(a => {
+                        // 需要通过 scriptTaskId 关联
+                        return a.scriptTaskId === taskId;
+                    });
+                    const taskActIds = taskActs.map(a => a.id);
+                    const taskActScenes = actScenes.filter(s => taskActIds.includes(s.actId));
+                    const taskUniqueSceneIds = [...new Set(taskActScenes.map(s => s.sceneId))];
+                    const taskShots = shots.filter(s => taskActIds.includes(s.actId));
+
+                    // 统计对话数量
+                    let dialogueCount = 0;
+                    for (const shot of taskShots) {
+                        if (shot.dialogue) {
+                            try {
+                                const dialogueArray = JSON.parse(shot.dialogue);
+                                if (Array.isArray(dialogueArray)) {
+                                    dialogueCount += dialogueArray.length;
+                                }
+                            } catch (e) {
+                                // 忽略解析错误
+                            }
+                        }
+                    }
+
+                    // 构建场景列表（包含详细信息）
+                    const scenesList = [];
+                    // 按场景在任务中的出现顺序排序
+                    const taskSceneOrderMap = new Map();
+                    taskActScenes.forEach((actScene, index) => {
+                        if (!taskSceneOrderMap.has(actScene.sceneId)) {
+                            taskSceneOrderMap.set(actScene.sceneId, {
+                                minOrder: actScene.order,
+                                firstAppearIndex: index,
+                            });
+                        } else {
+                            const existing = taskSceneOrderMap.get(actScene.sceneId);
+                            if (actScene.order < existing.minOrder) {
+                                existing.minOrder = actScene.order;
+                            }
+                        }
+                    });
+
+                    // 获取任务中的场景详情并按顺序排序
+                    const taskScenesDetails = sceneDetails
+                        .filter(s => taskUniqueSceneIds.includes(s.id))
+                        .map(scene => {
+                            const sceneOrder = taskSceneOrderMap.get(scene.id);
+                            return {
+                                ...scene,
+                                _order: sceneOrder ? sceneOrder.minOrder : 999,
+                                _firstIndex: sceneOrder ? sceneOrder.firstAppearIndex : 999,
+                            };
+                        })
+                        .sort((a, b) => {
+                            if (a._order !== b._order) return a._order - b._order;
+                            return a._firstIndex - b._firstIndex;
+                        });
+
+                    // 为每个场景计算统计信息
+                    for (let i = 0; i < taskScenesDetails.length; i++) {
+                        const scene = taskScenesDetails[i];
+                        const sceneShots = taskShots
+                            .filter(s => s.sceneId === scene.id)
+                            .sort((a, b) => (a.order || 0) - (b.order || 0)); // 按 order 排序
+
+                        // 计算场景总时长
+                        const totalDuration = sceneShots.reduce((sum, shot) => {
+                            return sum + (shot.duration || 0);
+                        }, 0);
+
+                        // 统计场景的对话数量
+                        let sceneDialogueCount = 0;
+                        for (const shot of sceneShots) {
+                            if (shot.dialogue) {
+                                try {
+                                    const dialogueArray = JSON.parse(shot.dialogue);
+                                    if (Array.isArray(dialogueArray)) {
+                                        sceneDialogueCount += dialogueArray.length;
+                                    }
+                                } catch (e) {
+                                    // 忽略解析错误
+                                }
+                            }
+                        }
+
+                        // 生成场景描述（镜头描述）
+                        // 如果 sceneDescription 存在，使用它；否则从第一个镜头的字段组合生成
+                        let sceneDescription = scene.sceneDescription || '';
+                        if (!sceneDescription && sceneShots.length > 0) {
+                            const firstShot = sceneShots[0];
+                            const descParts = [];
+
+                            // 组合镜头信息生成描述
+                            if (firstShot.shotType) descParts.push(firstShot.shotType);
+                            if (firstShot.framing) descParts.push(firstShot.framing);
+                            if (firstShot.cameraAngle) descParts.push(`镜头${firstShot.cameraAngle}`);
+                            if (firstShot.cameraMovement) descParts.push(`镜头${firstShot.cameraMovement}`);
+                            if (firstShot.action) descParts.push(firstShot.action);
+                            if (firstShot.characterAction) descParts.push(firstShot.characterAction);
+
+                            // 如果有多镜头，添加省略号
+                            if (sceneShots.length > 1) {
+                                sceneDescription = descParts.join('。') + '...';
+                            } else {
+                                sceneDescription = descParts.join('。');
+                            }
+                        }
+
+                        scenesList.push({
+                            sceneId: scene.id,
+                            sceneNumber: `SCENE ${String(i + 1).padStart(3, '0')}`, // SCENE 001, SCENE 002...
+                            title: scene.address, // 场景标题（地址/地点）- 对应图片中的"青牛镇的市集喧嚣"
+                            description: sceneDescription || '', // 场景描述（镜头描述）- 对应图片中红框位置的详细描述
+                            sceneImage: scene.sceneImage || null, // 场景图片
+                            duration: totalDuration, // 总时长（秒）- 对应图片中的"12s"
+                            shotsCount: sceneShots.length, // 镜头数量 - 对应图片中的"3镜头"
+                            dialogueCount: sceneDialogueCount, // 对话数量（台词行数）- 对应图片中的"台词: 2"
+                        });
+                    }
+
+                    // 获取章节ID
+                    const task = batch.scriptTasks.find(t => t.id === taskId);
+                    let chapterIds = [];
+                    if (task && task.chapterIds) {
+                        try {
+                            chapterIds = JSON.parse(task.chapterIds);
+                        } catch (e) {
+                            logger.warn(`Failed to parse chapterIds for task ${taskId}:`, e);
+                        }
+                    }
+
+                    taskStatsMap.set(taskId, {
+                        actsCount: taskActs.length,
+                        scenesCount: taskUniqueSceneIds.length,
+                        shotsCount: taskShots.length,
+                        dialogueCount: dialogueCount,
+                        chapterIds: chapterIds,
+                        scenes: scenesList, // 场景列表（包含详细信息）
+                    });
+                }
+            }
+
+            return {
+                batchId: batch.id,
+                jobId: batch.jobId,
+                taskName: batch.taskName,
+                novelId: batch.novelId,
+                projectId: batch.projectId,
+                status: batch.status,
+                progress: batch.progress,
+                totalTasks: batch.totalTasks,
+                completedTasks: batch.completedTasks,
+                failedTasks: batch.failedTasks,
+                config: batch.config ? JSON.parse(batch.config) : null,
+                startedAt: batch.startedAt,
+                completedAt: batch.completedAt,
+                createdAt: batch.createdAt,
+                updatedAt: batch.updatedAt,
+                tasks: await Promise.all(batch.scriptTasks.map(async (task) => {
+                    const baseTask = {
+                        taskId: task.id,
+                        chapterRange: task.chapterRange,
+                        wordCount: task.wordCount,
+                        status: task.status,
+                        progress: task.progress,
+                        errorMessage: task.errorMessage,
+                        startedAt: task.startedAt,
+                        completedAt: task.completedAt,
+                        createdAt: task.createdAt,
+                    };
+
+                    // 如果任务已完成，添加统计信息
+                    if (task.status === 'completed' && taskStatsMap.has(task.id)) {
+                        const stats = taskStatsMap.get(task.id);
+                        return {
+                            ...baseTask,
+                            statistics: {
+                                actsCount: stats.actsCount,
+                                scenesCount: stats.scenesCount,
+                                shotsCount: stats.shotsCount,
+                                dialogueCount: stats.dialogueCount,
+                                chapterIds: stats.chapterIds,
+                                scenes: stats.scenes || [], // 场景列表（包含详细信息，用于展示红框位置的内容）
+                            },
+                        };
+                    }
+
+                    return baseTask;
+                })),
+            };
+        } catch (error) {
+            if (error instanceof NotFoundError) {
+                throw error;
+            }
+            logger.error('Get script batch error:', error);
+            throw new AppError('Failed to get script batch', 500);
         }
     }
 }

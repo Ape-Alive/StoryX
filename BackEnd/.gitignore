@@ -29,6 +29,9 @@ Thumbs.db
 # Uploads
 uploads/
 temp/
+storage/
+docs/
+library/
 
 # Build
 dist/

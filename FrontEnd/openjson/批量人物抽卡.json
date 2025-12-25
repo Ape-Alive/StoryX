@@ -1,0 +1,237 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "默认模块",
+    "description": "StoryX Backend API - AI-powered animation video generation platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "StoryX Team"
+    },
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "tags": [
+    {
+      "name": "Character Draw"
+    }
+  ],
+  "paths": {
+    "/api/characters/draw": {
+      "post": {
+        "summary": "批量抽卡（每个角色创建一个任务）",
+        "deprecated": false,
+        "description": "批量生成角色的人物视频（2s）或图片，每个角色创建一个独立任务。根据drawType自动选择模型（image使用grsai的sora-image，video使用grsai的sora-2）。",
+        "tags": [
+          "Character Draw"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "characterIds",
+                  "projectId"
+                ],
+                "properties": {
+                  "characterIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "角色ID数组（支持单个或多个）",
+                    "example": [
+                      "character-uuid-1",
+                      "character-uuid-2"
+                    ]
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "项目ID",
+                    "example": "project-uuid"
+                  },
+                  "drawType": {
+                    "type": "string",
+                    "enum": [
+                      "image",
+                      "video"
+                    ],
+                    "default": "image",
+                    "description": "抽卡类型，image=图片，video=视频（2秒）",
+                    "example": "image"
+                  },
+                  "apiConfig": {
+                    "type": "object",
+                    "description": "自定义AI API请求参数对象，用于适配不同AI提供商的请求格式",
+                    "properties": {},
+                    "example": {
+                      "prompt": "自定义提示词",
+                      "width": 1024,
+                      "height": 1024,
+                      "duration": 2
+                    }
+                  },
+                  "storageMode": {
+                    "type": "string",
+                    "enum": [
+                      "download_upload",
+                      "buffer_upload"
+                    ],
+                    "default": "download_upload",
+                    "description": "存储方式，download_upload=下载到本地再上传到Catbox，buffer_upload=直接下载Buffer然后上传到Catbox",
+                    "example": "download_upload"
+                  },
+                  "featurePromptId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "功能提示词ID（FeaturePrompt表的id），用于获取功能提示词",
+                    "example": "feature-prompt-uuid"
+                  },
+                  "genreStyle": {
+                    "type": "string",
+                    "description": "题材风格（字符串类型），如\"古风\"、\"现代\"、\"科幻\"等",
+                    "example": "古风"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "抽卡任务已创建",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "taskIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "taskId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "description": "任务ID"
+                                  },
+                                  "characterId": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "description": "角色ID"
+                                  }
+                                }
+                              },
+                              "description": "任务ID数组（每个角色一个任务，包含taskId和characterId）"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Error message"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Success message"
+          },
+          "data": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      }
+    },
+    "responses": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

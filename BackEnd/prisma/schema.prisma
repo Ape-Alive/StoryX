@@ -25,16 +25,17 @@ model User {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  projects        Project[]
-  characters      Character[]
-  novels          Novel[]
-  scriptTasks     ScriptTask[]
-  acts            Act[] // 关联的剧幕
-  scenes          Scene[] // 关联的场景
-  shots           Shot[] // 关联的镜头
-  drawTasks       CharacterDrawTask[] // 角色抽卡任务
-  sceneImageTasks SceneImageTask[] // 场景图生成任务
-  shotVideoTasks  ShotVideoTask[] // 镜头视频生成任务
+  projects         Project[]
+  characters       Character[]
+  novels           Novel[]
+  scriptTasks      ScriptTask[]
+  scriptTaskBatches ScriptTaskBatch[] // 剧本生成任务批次
+  acts             Act[] // 关联的剧幕
+  scenes           Scene[] // 关联的场景
+  shots            Shot[] // 关联的镜头
+  drawTasks        CharacterDrawTask[] // 角色抽卡任务
+  sceneImageTasks  SceneImageTask[] // 场景图生成任务
+  shotVideoTasks   ShotVideoTask[] // 镜头视频生成任务
 
   @@index([email])
   @@index([username])
@@ -76,16 +77,17 @@ model Project {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
-  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  characters      Character[] // 项目关联的角色
-  novels          Novel[] // 项目关联的小说
-  scriptTasks     ScriptTask[] // 剧本生成任务
-  acts            Act[] // 关联的剧幕
-  scenes          Scene[] // 关联的场景
-  shots           Shot[] // 关联的镜头
-  drawTasks       CharacterDrawTask[] // 角色抽卡任务
-  sceneImageTasks SceneImageTask[] // 场景图生成任务
-  shotVideoTasks  ShotVideoTask[] // 镜头视频生成任务
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  characters       Character[] // 项目关联的角色
+  novels           Novel[] // 项目关联的小说
+  scriptTasks      ScriptTask[] // 剧本生成任务
+  scriptTaskBatches ScriptTaskBatch[] // 剧本生成任务批次
+  acts             Act[] // 关联的剧幕
+  scenes           Scene[] // 关联的场景
+  shots            Shot[] // 关联的镜头
+  drawTasks        CharacterDrawTask[] // 角色抽卡任务
+  sceneImageTasks  SceneImageTask[] // 场景图生成任务
+  shotVideoTasks   ShotVideoTask[] // 镜头视频生成任务
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([status])
@@ -223,16 +225,17 @@ model Novel {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chapters        Chapter[]
-  characters      Character[] // 从剧本生成任务中提取的角色
-  scriptTasks     ScriptTask[]
-  acts            Act[] // 关联的剧幕
-  scenes          Scene[] // 关联的场景
-  shots           Shot[] // 关联的镜头
-  sceneImageTasks SceneImageTask[] // 场景图生成任务
-  shotVideoTasks  ShotVideoTask[] // 镜头视频生成任务
+  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapters         Chapter[]
+  characters       Character[] // 从剧本生成任务中提取的角色
+  scriptTasks      ScriptTask[]
+  scriptTaskBatches ScriptTaskBatch[] // 剧本生成任务批次
+  acts             Act[] // 关联的剧幕
+  scenes           Scene[] // 关联的场景
+  shots            Shot[] // 关联的镜头
+  sceneImageTasks  SceneImageTask[] // 场景图生成任务
+  shotVideoTasks   ShotVideoTask[] // 镜头视频生成任务
 
   @@index([projectId])
   @@index([userId])
@@ -257,9 +260,42 @@ model Chapter {
   @@index([novelId, order])
 }
 
+// 剧本生成任务批次
+model ScriptTaskBatch {
+  id             String    @id @default(uuid())
+  jobId          String    @unique // 任务ID，格式：JOB-xxxx
+  taskName       String // 任务名称，如"全本智能结构化"
+  novelId        String // 关联的小说ID
+  projectId      String // 关联的项目ID
+  userId         String // 创建者ID
+  status         String    @default("pending") // pending, processing, completed, failed
+  progress       Int       @default(0) // 0-100，基于子任务计算
+  totalTasks     Int       @default(0) // 总任务数
+  completedTasks Int       @default(0) // 已完成任务数
+  failedTasks    Int       @default(0) // 失败任务数
+  config         String? // JSON字符串，存储调用时的配置参数
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  novel      Novel       @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scriptTasks ScriptTask[] // 关联的子任务
+
+  @@index([novelId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([status])
+  @@index([novelId, status])
+  @@index([createdAt(sort: Desc)])
+}
+
 // 剧本生成任务
 model ScriptTask {
   id           String    @id @default(uuid())
+  batchId      String? // 关联的任务批次ID
   novelId      String // 关联的小说ID
   projectId    String // 关联的项目ID
   userId       String // 创建者ID
@@ -276,11 +312,13 @@ model ScriptTask {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  novel   Novel   @relation(fields: [novelId], references: [id], onDelete: Cascade)
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batch   ScriptTaskBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  novel   Novel            @relation(fields: [novelId], references: [id], onDelete: Cascade)
+  project Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   acts    Act[] // 关联的剧幕
 
+  @@index([batchId])
   @@index([novelId])
   @@index([projectId])
   @@index([userId])

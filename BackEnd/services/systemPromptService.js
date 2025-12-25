@@ -311,11 +311,26 @@ class SystemPromptService {
 
     /**
      * 获取功能提示词列表
+     * @param {Object} filters - 过滤条件 { systemPromptId, functionKey, functionType }
+     * 当 systemPromptId 和 functionKey 都存在时，优先使用 systemPromptId
      */
     async getFeaturePrompts(filters = {}) {
         const prisma = getPrisma();
         const where = {};
-        if (filters.systemPromptId) where.systemPromptId = filters.systemPromptId;
+
+        // 优先使用 systemPromptId
+        if (filters.systemPromptId) {
+            where.systemPromptId = filters.systemPromptId;
+        } else if (filters.functionKey) {
+            // 如果提供了 functionKey，先通过 functionKey 查找对应的 SystemPrompt
+            const systemPrompt = await this.getSystemPromptByFunctionKey(filters.functionKey);
+            if (!systemPrompt) {
+                // 如果找不到对应的 SystemPrompt，返回空数组
+                return [];
+            }
+            where.systemPromptId = systemPrompt.id;
+        }
+
         if (filters.functionType) where.functionType = filters.functionType;
 
         const list = await prisma.featurePrompt.findMany({

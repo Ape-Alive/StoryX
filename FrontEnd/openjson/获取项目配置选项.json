@@ -1,0 +1,172 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "默认模块",
+    "description": "StoryX Backend API - AI-powered animation video generation platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "StoryX Team"
+    },
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "tags": [
+    {
+      "name": "AI Models"
+    }
+  ],
+  "paths": {
+    "/api/ai-models/config-options": {
+      "get": {
+        "summary": "获取项目配置选项",
+        "deprecated": false,
+        "description": "获取用于项目创建的AI模型配置选项，按类型分组（LLM、视频、图片、TTS）",
+        "tags": [
+          "AI Models"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回配置选项",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "llm": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            },
+                            "video": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            },
+                            "image": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            },
+                            "tts": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/AIModel"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Success message"
+          },
+          "data": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      },
+      "AIModel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "llm",
+              "video",
+              "image",
+              "tts"
+            ]
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "displayName": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

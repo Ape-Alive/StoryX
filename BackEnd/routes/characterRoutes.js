@@ -35,7 +35,7 @@ router.use(authenticate);
  *         schema:
  *           type: string
  *           format: uuid
- *         description: 小说ID，如果提供则只返回该小说的角色（需要同时提供 projectId）
+ *         description: 小说ID，如果提供则只返回该小说的角色（可选，如果同时提供 projectId 会进行额外验证）
  *     responses:
  *       200:
  *         description: 成功返回角色列表

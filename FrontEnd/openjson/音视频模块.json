@@ -1,0 +1,1593 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "默认模块",
+    "description": "StoryX Backend API - AI-powered animation video generation platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "StoryX Team"
+    },
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "tags": [
+    {
+      "name": "Media"
+    }
+  ],
+  "paths": {
+    "/api/media/projects/{projectId}/novels/{novelId}/acts": {
+      "get": {
+        "summary": "获取当前项目下指定小说的所有剧幕（包含场景、镜头等信息）",
+        "deprecated": false,
+        "description": "获取指定小说的所有剧幕，按章节顺序排序，包含场景、镜头等完整信息",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "novelId",
+            "in": "path",
+            "description": "小说ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回剧幕列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid",
+                                "description": "剧幕ID"
+                              },
+                              "scriptTaskId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "description": "关联的剧本生成任务ID"
+                              },
+                              "novelId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "description": "小说ID"
+                              },
+                              "projectId": {
+                                "type": "string",
+                                "format": "uuid",
+                                "description": "项目ID"
+                              },
+                              "actName": {
+                                "type": "string",
+                                "description": "剧幕名称，如 \"第一幕\""
+                              },
+                              "content": {
+                                "type": "string",
+                                "description": "剧幕内容描述",
+                                "nullable": true
+                              },
+                              "highlight": {
+                                "type": "string",
+                                "description": "爽点描述",
+                                "nullable": true
+                              },
+                              "emotionalCurve": {
+                                "type": "string",
+                                "description": "情感曲线描述",
+                                "nullable": true
+                              },
+                              "rhythm": {
+                                "type": "string",
+                                "description": "节奏描述",
+                                "nullable": true
+                              },
+                              "chapterIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "description": "关联的章节ID列表（数组）"
+                              },
+                              "order": {
+                                "type": "integer",
+                                "description": "剧幕顺序（在任务内的顺序）"
+                              },
+                              "startChapterOrder": {
+                                "type": "integer",
+                                "description": "起始章节顺序号（用于按章节顺序排序）",
+                                "nullable": true
+                              },
+                              "scenes": {
+                                "type": "array",
+                                "description": "场景列表",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid",
+                                      "description": "场景ID"
+                                    },
+                                    "address": {
+                                      "type": "string",
+                                      "description": "场景地址/地点"
+                                    },
+                                    "sceneDescription": {
+                                      "type": "string",
+                                      "description": "场景描述",
+                                      "nullable": true
+                                    },
+                                    "sceneImage": {
+                                      "type": "string",
+                                      "format": "uri",
+                                      "description": "场景图片URL",
+                                      "nullable": true
+                                    },
+                                    "order": {
+                                      "type": "integer",
+                                      "description": "场景在剧幕中的顺序"
+                                    },
+                                    "shots": {
+                                      "type": "array",
+                                      "description": "场景下的镜头列表",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "id": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "description": "镜头ID"
+                                          },
+                                          "sceneId": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "description": "关联的场景ID",
+                                            "nullable": true
+                                          },
+                                          "actId": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "description": "关联的剧幕ID"
+                                          },
+                                          "shotId": {
+                                            "type": "string",
+                                            "description": "镜头编号（格式：SHOT 001）"
+                                          },
+                                          "duration": {
+                                            "type": "number",
+                                            "description": "镜头时长（秒）",
+                                            "nullable": true
+                                          },
+                                          "shotType": {
+                                            "type": "string",
+                                            "description": "镜头类型",
+                                            "nullable": true
+                                          },
+                                          "framing": {
+                                            "type": "string",
+                                            "description": "构图方式",
+                                            "nullable": true
+                                          },
+                                          "cameraAngle": {
+                                            "type": "string",
+                                            "description": "拍摄角度",
+                                            "nullable": true
+                                          },
+                                          "cameraMovement": {
+                                            "type": "string",
+                                            "description": "摄像机运动",
+                                            "nullable": true
+                                          },
+                                          "characterAction": {
+                                            "type": "string",
+                                            "description": "角色动作",
+                                            "nullable": true
+                                          },
+                                          "action": {
+                                            "type": "string",
+                                            "description": "动作描述",
+                                            "nullable": true
+                                          },
+                                          "expression": {
+                                            "type": "string",
+                                            "description": "表情",
+                                            "nullable": true
+                                          },
+                                          "dialogue": {
+                                            "type": "array",
+                                            "description": "对话/台词列表",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "characterId": {
+                                                  "type": "string",
+                                                  "format": "uuid",
+                                                  "nullable": true
+                                                },
+                                                "characterName": {
+                                                  "type": "string",
+                                                  "nullable": true
+                                                },
+                                                "text": {
+                                                  "type": "string"
+                                                },
+                                                "emotion": {
+                                                  "type": "string",
+                                                  "nullable": true
+                                                },
+                                                "audioUrl": {
+                                                  "type": "string",
+                                                  "format": "uri",
+                                                  "nullable": true
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "voiceover": {
+                                            "type": "string",
+                                            "description": "旁白",
+                                            "nullable": true
+                                          },
+                                          "lighting": {
+                                            "type": "string",
+                                            "description": "灯光",
+                                            "nullable": true
+                                          },
+                                          "atmosphere": {
+                                            "type": "string",
+                                            "description": "氛围",
+                                            "nullable": true
+                                          },
+                                          "bgm": {
+                                            "type": "string",
+                                            "description": "背景音乐",
+                                            "nullable": true
+                                          },
+                                          "fx": {
+                                            "type": "string",
+                                            "description": "特效",
+                                            "nullable": true
+                                          },
+                                          "soundEffect": {
+                                            "type": "string",
+                                            "description": "音效",
+                                            "nullable": true
+                                          },
+                                          "isTransition": {
+                                            "type": "boolean",
+                                            "description": "是否为转场镜头"
+                                          },
+                                          "characterIds": {
+                                            "type": "array",
+                                            "description": "角色ID列表",
+                                            "items": {
+                                              "type": "string",
+                                              "format": "uuid"
+                                            }
+                                          },
+                                          "characterList": {
+                                            "type": "array",
+                                            "description": "角色列表（包含id、name、gender）",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "id": {
+                                                  "type": "string",
+                                                  "format": "uuid"
+                                                },
+                                                "name": {
+                                                  "type": "string"
+                                                },
+                                                "gender": {
+                                                  "type": "string",
+                                                  "nullable": true
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "metadata": {
+                                            "type": "object",
+                                            "description": "元数据",
+                                            "additionalProperties": true,
+                                            "properties": {}
+                                          },
+                                          "order": {
+                                            "type": "integer",
+                                            "description": "镜头顺序"
+                                          },
+                                          "videoUrl": {
+                                            "type": "string",
+                                            "format": "uri",
+                                            "description": "视频URL",
+                                            "nullable": true
+                                          },
+                                          "videoPath": {
+                                            "type": "string",
+                                            "description": "视频本地路径",
+                                            "nullable": true
+                                          },
+                                          "createdAt": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                          },
+                                          "updatedAt": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "directShots": {
+                                "type": "array",
+                                "description": "直接关联到剧幕的镜头列表（没有场景的镜头）",
+                                "items": {
+                                  "type": "object",
+                                  "description": "镜头对象（结构同scenes[].shots[]中的镜头对象）",
+                                  "properties": {}
+                                }
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "项目或小说不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/novels/{novelId}/generate-shots": {
+      "post": {
+        "summary": "按剧幕依次生成镜头视频",
+        "deprecated": false,
+        "description": "按剧幕顺序依次生成镜头视频，支持并发",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "novelId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "actIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "剧幕ID数组，如果为空则生成所有剧幕下的镜头视频",
+                    "example": [
+                      "act-uuid-1",
+                      "act-uuid-2"
+                    ]
+                  },
+                  "concurrency": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "并发数"
+                  },
+                  "apiConfig": {
+                    "type": "object",
+                    "description": "自定义API参数",
+                    "properties": {}
+                  },
+                  "allowOverwrite": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否允许覆盖已生成的视频"
+                  },
+                  "storageMode": {
+                    "type": "string",
+                    "enum": [
+                      "download_upload",
+                      "buffer_upload"
+                    ],
+                    "default": "download_upload",
+                    "description": "存储方式，download_upload=下载到本地再上传到Catbox，buffer_upload=直接下载Buffer然后上传到Catbox"
+                  },
+                  "featurePromptId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "功能提示词ID（FeaturePrompt表的id），用于获取功能提示词",
+                    "example": "feature-prompt-uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "生成任务已启动",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "总镜头数"
+                    },
+                    "acts": {
+                      "type": "array",
+                      "description": "按剧幕组织的任务列表",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "actId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "剧幕ID"
+                          },
+                          "actName": {
+                            "type": "string",
+                            "description": "剧幕名称"
+                          },
+                          "order": {
+                            "type": "integer",
+                            "description": "剧幕顺序"
+                          },
+                          "startChapterOrder": {
+                            "type": "integer",
+                            "description": "起始章节顺序"
+                          },
+                          "taskIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "description": "该剧幕下的镜头生成任务ID数组"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/shots/generate": {
+      "post": {
+        "summary": "生成指定单个镜头视频",
+        "deprecated": false,
+        "description": "根据镜头ID数组生成视频，支持并发和覆盖",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "novelId",
+            "in": "query",
+            "description": "小说ID（可选，用于验证镜头是否属于该小说）",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "shotIds"
+                ],
+                "properties": {
+                  "shotIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "镜头ID数组"
+                  },
+                  "concurrency": {
+                    "type": "integer",
+                    "default": 3
+                  },
+                  "apiConfig": {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  "allowOverwrite": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "keepBoth": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否保留两者（生成新版本但不删除旧版本）"
+                  },
+                  "storageMode": {
+                    "type": "string",
+                    "enum": [
+                      "download_upload",
+                      "buffer_upload"
+                    ],
+                    "default": "download_upload",
+                    "description": "存储方式，download_upload=下载到本地再上传到Catbox，buffer_upload=直接下载Buffer然后上传到Catbox"
+                  },
+                  "featurePromptId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "功能提示词ID（FeaturePrompt表的id），用于获取功能提示词",
+                    "example": "feature-prompt-uuid"
+                  },
+                  "mergeShots": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否合并多个镜头为一个视频（自动分组）"
+                  },
+                  "maxDuration": {
+                    "type": "number",
+                    "description": "合并模式下的目标时长（秒），mergeShots=true时必填",
+                    "example": 10
+                  },
+                  "toleranceSec": {
+                    "type": "number",
+                    "default": 5,
+                    "description": "时长容差（秒），合并后的总时长应在 [maxDuration - toleranceSec, maxDuration + toleranceSec] 范围内",
+                    "example": 5
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "生成任务已启动",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/acts/{actId}/shots": {
+      "post": {
+        "summary": "新增镜头",
+        "deprecated": false,
+        "description": "在指定剧幕中新增镜头，支持向前或向后插入",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/shots/{shotId}": {
+      "put": {
+        "summary": "修改镜头",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "shotId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/shots": {
+      "delete": {
+        "summary": "删除镜头（支持批量删除）",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/dialogues/generate-audio": {
+      "post": {
+        "summary": "生成台词音频",
+        "deprecated": false,
+        "description": "批量生成台词音频，支持并发",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "dialogueIds"
+                ],
+                "properties": {
+                  "dialogueIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "对话ID数组（格式：shotId_index）"
+                  },
+                  "concurrency": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "并发数"
+                  },
+                  "apiConfig": {
+                    "type": "object",
+                    "description": "自定义API参数",
+                    "properties": {}
+                  },
+                  "storageMode": {
+                    "type": "string",
+                    "enum": [
+                      "download_upload",
+                      "buffer_upload"
+                    ],
+                    "default": "download_upload",
+                    "description": "存储方式，download_upload=下载到本地再上传到Catbox，buffer_upload=直接下载Buffer然后上传到Catbox"
+                  },
+                  "featurePromptId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "功能提示词ID（FeaturePrompt表的id），用于获取功能提示词",
+                    "example": "feature-prompt-uuid"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "生成任务已启动",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/dialogues/{dialogueId}": {
+      "put": {
+        "summary": "修改台词内容",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dialogueId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除台词内容",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dialogueId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/preview/video": {
+      "get": {
+        "summary": "预览视频",
+        "deprecated": false,
+        "description": "预览一幕的视频拼接或单个镜头视频",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "预览类型",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "act",
+                "shot"
+              ]
+            }
+          },
+          {
+            "name": "actId",
+            "in": "query",
+            "description": "剧幕ID（type=act时必填）",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "shotId",
+            "in": "query",
+            "description": "镜头ID（type=shot时必填）",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/preview/video-with-audio": {
+      "get": {
+        "summary": "预览带台词音频的视频",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/export/acts": {
+      "post": {
+        "summary": "导出按幕导出视频",
+        "deprecated": false,
+        "description": "导出指定剧幕的视频/音频/视频+音频",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/export/single": {
+      "post": {
+        "summary": "导出单个视频或音频",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/tasks/{taskId}": {
+      "get": {
+        "summary": "查询镜头视频生成任务进度",
+        "deprecated": false,
+        "description": "根据任务ID查询单个镜头视频生成任务的进度",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "description": "任务ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回任务进度",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "taskId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "shotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "actId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "actName": {
+                      "type": "string"
+                    },
+                    "shotInfo": {
+                      "type": "object",
+                      "properties": {}
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "processing",
+                        "completed",
+                        "failed"
+                      ]
+                    },
+                    "progress": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "videoUrl": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "videoPath": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "errorMessage": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "startedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "completedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/acts/{actId}/tasks": {
+      "get": {
+        "summary": "查询剧幕下的所有镜头视频生成任务",
+        "deprecated": false,
+        "description": "查询指定剧幕下的所有镜头视频生成任务，支持按状态过滤",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "actId",
+            "in": "path",
+            "description": "剧幕ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "任务状态过滤（可选）",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "processing",
+                "completed",
+                "failed"
+              ]
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回任务列表",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/media/projects/{projectId}/tasks": {
+      "get": {
+        "summary": "查询项目/小说下的所有镜头视频生成任务",
+        "deprecated": false,
+        "description": "查询指定项目或小说下的所有镜头视频生成任务，支持按状态过滤",
+        "tags": [
+          "Media"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "novelId",
+            "in": "query",
+            "description": "小说ID（可选，如果提供则只查询该小说下的任务）",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "任务状态过滤（可选）",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "processing",
+                "completed",
+                "failed"
+              ]
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回任务列表",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Error message"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Success message"
+          },
+          "data": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      }
+    },
+    "responses": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

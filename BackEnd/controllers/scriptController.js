@@ -18,12 +18,14 @@ class ScriptController {
         }
 
         const config = {
+            taskName: req.body.taskName, // 任务名称（可选）
             selectedChapterIds: req.body.selectedChapterIds || [],
             taskType: req.body.taskType || 'by_chapters',
             chaptersPerTask: req.body.chaptersPerTask || 1,
             wordsPerTask: req.body.wordsPerTask || 4000,
             startChapter: req.body.startChapter,
             endChapter: req.body.endChapter,
+            skipOverlapping: req.body.skipOverlapping !== undefined ? req.body.skipOverlapping : false, // 默认不跳过重叠的任务
         };
 
         const result = await scriptService.startScriptGeneration(
@@ -90,6 +92,30 @@ class ScriptController {
 
         const acts = await scriptService.getNovelActs(novelId, userId);
         ResponseUtil.success(res, acts, 'Novel acts retrieved successfully');
+    });
+
+    /**
+     * 获取小说的所有剧本生成批次
+     * GET /api/novels/:novelId/script/batches
+     */
+    getNovelScriptBatches = asyncHandler(async (req, res) => {
+        const { novelId } = req.params;
+        const userId = req.user.id;
+
+        const batches = await scriptService.getNovelScriptBatches(novelId, userId);
+        ResponseUtil.success(res, batches, 'Script batches retrieved successfully');
+    });
+
+    /**
+     * 获取单个批次详情
+     * GET /api/script/batches/:batchId
+     */
+    getScriptBatch = asyncHandler(async (req, res) => {
+        const { batchId } = req.params;
+        const userId = req.user.id;
+
+        const batch = await scriptService.getScriptBatch(batchId, userId);
+        ResponseUtil.success(res, batch, 'Script batch retrieved successfully');
     });
 }
 

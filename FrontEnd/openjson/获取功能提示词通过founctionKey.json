@@ -1,0 +1,95 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "默认模块",
+    "description": "StoryX Backend API - AI-powered animation video generation platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "StoryX Team"
+    },
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "tags": [
+    {
+      "name": "SystemPrompts"
+    }
+  ],
+  "paths": {
+    "/api/system-prompts/feature-prompts": {
+      "get": {
+        "summary": "获取功能提示词列表（通过 functionKey）",
+        "deprecated": false,
+        "description": "通过 functionKey 查询功能提示词列表，不需要提供 systemPromptId",
+        "tags": [
+          "SystemPrompts"
+        ],
+        "parameters": [
+          {
+            "name": "functionKey",
+            "in": "query",
+            "description": "系统提示词的功能标识（如：shot_video_generation, character_image_generation, scene_image_generation, script_generation, text_expansion等），必填",
+            "required": true,
+            "example": "shot_video_generation",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "functionType",
+            "in": "query",
+            "description": "按功能类型筛选",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NjQ1MzY1NCwiZXhwIjoxNzY3MDU4NDU0fQ.2vOIXmJ_PN1OgJLESmko0rrE_IBxQ00-YCVc9f9JYAw"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "headers": {}
+          },
+          "400": {
+            "description": "参数错误（缺少 functionKey）",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "responses": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

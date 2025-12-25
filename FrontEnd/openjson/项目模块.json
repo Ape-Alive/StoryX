@@ -1,0 +1,1007 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "默认模块",
+    "description": "StoryX Backend API - AI-powered animation video generation platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "StoryX Team"
+    },
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "tags": [
+    {
+      "name": "Projects"
+    }
+  ],
+  "paths": {
+    "/api/projects": {
+      "get": {
+        "summary": "获取当前用户的所有项目",
+        "deprecated": false,
+        "description": "获取当前登录用户的所有项目列表，支持分页和状态筛选",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页数量",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "项目状态筛选",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "processing",
+                "reviewing",
+                "generating",
+                "rendering",
+                "completed",
+                "failed"
+              ]
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回项目列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "projects": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/Project"
+                              }
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "page": {
+                                  "type": "integer"
+                                },
+                                "limit": {
+                                  "type": "integer"
+                                },
+                                "total": {
+                                  "type": "integer"
+                                },
+                                "pages": {
+                                  "type": "integer"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "创建新项目",
+        "deprecated": false,
+        "description": "创建一个新的动画项目，支持两种模式：自定义模式（custom）需要配置AI模型和存储位置；普通模式（normal）会从全局配置读取AI模型配置",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "storageLocation"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "我的第一个动画项目"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "项目描述"
+                  },
+                  "sourceText": {
+                    "type": "string",
+                    "example": "小说文本内容"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "custom",
+                      "normal"
+                    ],
+                    "default": "custom",
+                    "description": "创建模式，custom为自定义模式（需要提供所有配置），normal为普通模式（从全局配置读取）",
+                    "example": "normal"
+                  },
+                  "configLLM": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "LLM模型ID（custom模式必填，normal模式可选，会从全局配置读取）",
+                    "example": "uuid-of-llm-model"
+                  },
+                  "configLLMKey": {
+                    "type": "string",
+                    "description": "LLM API密钥（custom模式：如果配置了configLLM则必填；normal模式：从全局配置读取）",
+                    "example": "sk-xxxxxxxxxxxxx"
+                  },
+                  "configVideoAI": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "视频AI模型ID（custom模式必填，normal模式可选，会从全局配置读取）",
+                    "example": "uuid-of-video-model"
+                  },
+                  "configVideoAIKey": {
+                    "type": "string",
+                    "description": "视频AI API密钥（custom模式：如果配置了configVideoAI则必填；normal模式：从全局配置读取）",
+                    "example": "video-api-key-xxxxx"
+                  },
+                  "configTTS": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "TTS模型ID（custom模式必填，normal模式可选，会从全局配置读取）",
+                    "example": "uuid-of-tts-model"
+                  },
+                  "configTTSKey": {
+                    "type": "string",
+                    "description": "TTS API密钥（custom模式：如果配置了configTTS则必填；normal模式：从全局配置读取）",
+                    "example": "tts-api-key-xxxxx"
+                  },
+                  "configImageGen": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "图片生成模型ID（custom模式必填，normal模式可选，会从全局配置读取）",
+                    "example": "uuid-of-image-model"
+                  },
+                  "configImageGenKey": {
+                    "type": "string",
+                    "description": "图片生成API密钥（custom模式：如果配置了configImageGen则必填；normal模式：从全局配置读取）",
+                    "example": "sd-api-key-xxxxx"
+                  },
+                  "storageLocation": {
+                    "type": "string",
+                    "enum": [
+                      "local",
+                      "remote"
+                    ],
+                    "description": "存储位置",
+                    "example": "local"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "项目创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Project"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/projects/{id}": {
+      "get": {
+        "summary": "获取项目详情",
+        "deprecated": false,
+        "description": "根据项目ID获取项目详细信息",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回项目详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Project"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "更新项目",
+        "deprecated": false,
+        "description": "更新项目信息",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "sourceText": {
+                    "type": "string"
+                  },
+                  "configLLM": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "configLLMKey": {
+                    "type": "string"
+                  },
+                  "configVideoAI": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "configVideoAIKey": {
+                    "type": "string"
+                  },
+                  "configTTS": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "configTTSKey": {
+                    "type": "string"
+                  },
+                  "configImageGen": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "configImageGenKey": {
+                    "type": "string"
+                  },
+                  "storageLocation": {
+                    "type": "string",
+                    "enum": [
+                      "local",
+                      "remote"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "项目更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Project"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除项目",
+        "deprecated": false,
+        "description": "删除指定的项目",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "项目删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/projects/{id}/process": {
+      "post": {
+        "summary": "开始处理项目",
+        "deprecated": false,
+        "description": "开始处理项目的文本内容，生成动画视频",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "处理已开始",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Project"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/projects/{id}/characters": {
+      "get": {
+        "summary": "获取项目的所有角色",
+        "deprecated": false,
+        "description": "获取指定项目的所有角色（包括项目专属角色和全局角色）",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回角色列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Character"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/projects/{id}/novels": {
+      "get": {
+        "summary": "获取项目的所有小说",
+        "deprecated": false,
+        "description": "获取指定项目的所有小说列表",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "项目ID",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA",
+            "schema": {
+              "type": "string",
+              "default": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjNkMjAyOTcwLWVmMWUtNDE3ZC1hNzQxLTA5MmJmNjJhNDdhMCIsImlhdCI6MTc2NTc2NzM3MiwiZXhwIjoxNzY2MzcyMTcyfQ.lL4VWjIYSSLeQt6kMcqUHjrudya_PBDkPP0AfE2_QSA"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回小说列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Success"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {}
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "项目不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Error message"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Success message"
+          },
+          "data": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "sourceText": {
+            "type": "string"
+          },
+          "configLLM": {
+            "type": "string"
+          },
+          "configVideoAI": {
+            "type": "string"
+          },
+          "configTTS": {
+            "type": "string"
+          },
+          "configImageGen": {
+            "type": "string"
+          },
+          "storageLocation": {
+            "type": "string",
+            "enum": [
+              "local",
+              "remote"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "processing",
+              "reviewing",
+              "generating",
+              "rendering",
+              "completed",
+              "failed"
+            ]
+          },
+          "progress": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Character": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "项目ID，如果为null则表示是全局角色（所有项目共享）",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "age": {
+            "type": "string",
+            "description": "角色年龄，可能是\"25岁\"这样的描述",
+            "nullable": true
+          },
+          "gender": {
+            "type": "string"
+          },
+          "personality": {
+            "type": "string",
+            "description": "JSON array string"
+          },
+          "appearance": {
+            "type": "string"
+          },
+          "style": {
+            "type": "string"
+          },
+          "voiceActor": {
+            "type": "string",
+            "description": "发音人",
+            "nullable": true
+          },
+          "voiceTone": {
+            "type": "string",
+            "description": "音色",
+            "nullable": true
+          },
+          "voiceSample": {
+            "type": "string",
+            "format": "uri",
+            "description": "音色示例（URL）",
+            "nullable": true
+          },
+          "clothingStyle": {
+            "type": "string",
+            "description": "服饰风格",
+            "nullable": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "角色图片URL",
+            "nullable": true
+          },
+          "videoUrl": {
+            "type": "string",
+            "description": "角色视频URL（从抽卡任务生成）",
+            "nullable": true
+          },
+          "modelUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "cached": {
+            "type": "boolean"
+          },
+          "usageCount": {
+            "type": "integer"
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "description": "关联的项目信息（如果角色属于项目）",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "responses": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+      }
+    }
+  },
+  "servers": [],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

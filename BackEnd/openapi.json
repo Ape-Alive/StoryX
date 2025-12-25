@@ -120,10 +120,7 @@
           },
           "storageLocation": {
             "type": "string",
-            "enum": [
-              "local",
-              "remote"
-            ]
+            "enum": ["local", "remote"]
           },
           "status": {
             "type": "string",
@@ -167,12 +164,7 @@
           },
           "type": {
             "type": "string",
-            "enum": [
-              "llm",
-              "video",
-              "image",
-              "tts"
-            ]
+            "enum": ["llm", "video", "image", "tts"]
           },
           "baseUrl": {
             "type": "string"
@@ -584,9 +576,7 @@
       "get": {
         "summary": "获取项目配置选项",
         "description": "获取用于项目创建的AI模型配置选项，按类型分组（LLM、视频、图片、TTS）",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [],
         "responses": {
           "200": {
@@ -644,9 +634,7 @@
       "get": {
         "summary": "获取所有AI提供商",
         "description": "获取所有活跃的AI服务提供商列表",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [],
         "responses": {
           "200": {
@@ -703,9 +691,7 @@
       "post": {
         "summary": "创建新提供商",
         "description": "创建一个新的AI服务提供商",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [
           {
             "bearerAuth": []
@@ -717,10 +703,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "displayName"
-                ],
+                "required": ["name", "displayName"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -765,9 +748,7 @@
       "get": {
         "summary": "获取所有提供商（包括未启用的）",
         "description": "获取所有AI服务提供商列表，包括未启用的",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [
           {
             "bearerAuth": []
@@ -784,9 +765,7 @@
       "get": {
         "summary": "获取提供商详情",
         "description": "根据提供商ID获取详细信息",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [],
         "parameters": [
           {
@@ -811,9 +790,7 @@
       "put": {
         "summary": "更新提供商",
         "description": "更新提供商信息",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [
           {
             "bearerAuth": []
@@ -872,9 +849,7 @@
       "delete": {
         "summary": "删除提供商",
         "description": "删除提供商（如果有关联的模型，将无法删除）",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [
           {
             "bearerAuth": []
@@ -908,9 +883,7 @@
       "get": {
         "summary": "获取按类型分组的模型",
         "description": "获取所有AI模型，按类型（LLM、视频、图片、TTS）分组",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [],
         "responses": {
           "200": {
@@ -968,9 +941,7 @@
       "get": {
         "summary": "按类型获取模型",
         "description": "根据类型获取AI模型列表（llm、video、image、tts）",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [],
         "parameters": [
           {
@@ -979,12 +950,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "llm",
-                "video",
-                "image",
-                "tts"
-              ]
+              "enum": ["llm", "video", "image", "tts"]
             },
             "description": "模型类型"
           }
@@ -1032,9 +998,7 @@
       "get": {
         "summary": "获取模型详情",
         "description": "根据模型ID获取AI模型的详细信息",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [],
         "parameters": [
           {
@@ -1086,9 +1050,7 @@
       "put": {
         "summary": "更新模型",
         "description": "更新模型信息",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [
           {
             "bearerAuth": []
@@ -1127,12 +1089,7 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "llm",
-                      "video",
-                      "image",
-                      "tts"
-                    ]
+                    "enum": ["llm", "video", "image", "tts"]
                   },
                   "category": {
                     "type": "string"
@@ -1163,9 +1120,7 @@
       "delete": {
         "summary": "删除模型",
         "description": "删除AI模型",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [
           {
             "bearerAuth": []
@@ -1196,9 +1151,7 @@
       "get": {
         "summary": "获取所有模型（包括未启用的）",
         "description": "获取所有AI模型列表，包括未启用的",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [
           {
             "bearerAuth": []
@@ -1215,9 +1168,7 @@
       "post": {
         "summary": "创建新模型",
         "description": "创建一个新的AI模型",
-        "tags": [
-          "AI Models"
-        ],
+        "tags": ["AI Models"],
         "security": [
           {
             "bearerAuth": []
@@ -1229,12 +1180,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "providerId",
-                  "name",
-                  "displayName",
-                  "type"
-                ],
+                "required": ["providerId", "name", "displayName", "type"],
                 "properties": {
                   "providerId": {
                     "type": "string",
@@ -1255,12 +1201,7 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": [
-                      "llm",
-                      "video",
-                      "image",
-                      "tts"
-                    ],
+                    "enum": ["llm", "video", "image", "tts"],
                     "description": "模型类型"
                   },
                   "category": {
@@ -1298,9 +1239,7 @@
       "post": {
         "summary": "注册新用户",
         "description": "创建一个新的用户账号",
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -1308,11 +1247,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "username",
-                  "email",
-                  "password"
-                ],
+                "required": ["username", "email", "password"],
                 "properties": {
                   "username": {
                     "type": "string",
@@ -1384,9 +1319,7 @@
       "post": {
         "summary": "用户登录",
         "description": "使用邮箱和密码登录，返回 JWT token",
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -1394,10 +1327,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "email",
-                  "password"
-                ],
+                "required": ["email", "password"],
                 "properties": {
                   "email": {
                     "type": "string",
@@ -1462,9 +1392,7 @@
       "get": {
         "summary": "获取当前用户信息",
         "description": "获取当前登录用户的信息",
-        "tags": [
-          "Authentication"
-        ],
+        "tags": ["Authentication"],
         "security": [
           {
             "bearerAuth": []
@@ -1510,9 +1438,7 @@
       "get": {
         "summary": "获取章节内容",
         "description": "根据章节ID获取章节的完整内容",
-        "tags": [
-          "Novels"
-        ],
+        "tags": ["Novels"],
         "security": [
           {
             "bearerAuth": []
@@ -1570,9 +1496,7 @@
       "post": {
         "summary": "批量抽卡（每个角色创建一个任务）",
         "description": "批量生成角色的人物视频（2s）或图片，每个角色创建一个独立任务。根据drawType自动选择模型（image使用grsai的sora-image，video使用grsai的sora-2）。",
-        "tags": [
-          "Character Draw"
-        ],
+        "tags": ["Character Draw"],
         "security": [
           {
             "bearerAuth": []
@@ -1584,10 +1508,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "characterIds",
-                  "projectId"
-                ],
+                "required": ["characterIds", "projectId"],
                 "properties": {
                   "characterIds": {
                     "type": "array",
@@ -1596,10 +1517,7 @@
                       "format": "uuid"
                     },
                     "description": "角色ID数组（支持单个或多个）",
-                    "example": [
-                      "character-uuid-1",
-                      "character-uuid-2"
-                    ]
+                    "example": ["character-uuid-1", "character-uuid-2"]
                   },
                   "projectId": {
                     "type": "string",
@@ -1609,10 +1527,7 @@
                   },
                   "drawType": {
                     "type": "string",
-                    "enum": [
-                      "image",
-                      "video"
-                    ],
+                    "enum": ["image", "video"],
                     "default": "image",
                     "description": "抽卡类型，image=图片，video=视频（2秒）",
                     "example": "image"
@@ -1629,10 +1544,7 @@
                   },
                   "storageMode": {
                     "type": "string",
-                    "enum": [
-                      "download_upload",
-                      "buffer_upload"
-                    ],
+                    "enum": ["download_upload", "buffer_upload"],
                     "default": "download_upload",
                     "description": "存储方式，download_upload=下载到本地再上传到Catbox，buffer_upload=直接下载Buffer然后上传到Catbox",
                     "example": "download_upload"
@@ -1714,9 +1626,7 @@
       "get": {
         "summary": "查询抽卡进度",
         "description": "根据任务ID查询生成人物视频或图片的进度",
-        "tags": [
-          "Character Draw"
-        ],
+        "tags": ["Character Draw"],
         "security": [
           {
             "bearerAuth": []
@@ -1763,10 +1673,7 @@
                             },
                             "drawType": {
                               "type": "string",
-                              "enum": [
-                                "image",
-                                "video"
-                              ]
+                              "enum": ["image", "video"]
                             },
                             "status": {
                               "type": "string",
@@ -1829,9 +1736,7 @@
       "get": {
         "summary": "获取角色的所有抽卡任务",
         "description": "根据角色ID获取该角色的所有抽卡任务列表",
-        "tags": [
-          "Character Draw"
-        ],
+        "tags": ["Character Draw"],
         "security": [
           {
             "bearerAuth": []
@@ -1853,10 +1758,7 @@
             "name": "type",
             "schema": {
               "type": "string",
-              "enum": [
-                "image",
-                "video"
-              ]
+              "enum": ["image", "video"]
             },
             "description": "任务类型过滤（可选）"
           }
@@ -1885,10 +1787,7 @@
                               },
                               "drawType": {
                                 "type": "string",
-                                "enum": [
-                                  "image",
-                                  "video"
-                                ]
+                                "enum": ["image", "video"]
                               },
                               "status": {
                                 "type": "string",
@@ -1939,9 +1838,7 @@
       "get": {
         "summary": "获取当前用户的所有角色",
         "description": "获取当前登录用户的所有角色列表",
-        "tags": [
-          "Characters"
-        ],
+        "tags": ["Characters"],
         "security": [
           {
             "bearerAuth": []
@@ -2006,9 +1903,7 @@
       "post": {
         "summary": "创建新角色",
         "description": "创建一个新的角色",
-        "tags": [
-          "Characters"
-        ],
+        "tags": ["Characters"],
         "security": [
           {
             "bearerAuth": []
@@ -2020,9 +1915,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name"
-                ],
+                "required": ["name"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -2141,9 +2034,7 @@
       "get": {
         "summary": "获取角色详情",
         "description": "根据角色ID获取角色详细信息",
-        "tags": [
-          "Characters"
-        ],
+        "tags": ["Characters"],
         "security": [
           {
             "bearerAuth": []
@@ -2208,9 +2099,7 @@
       "put": {
         "summary": "更新角色",
         "description": "更新角色信息",
-        "tags": [
-          "Characters"
-        ],
+        "tags": ["Characters"],
         "security": [
           {
             "bearerAuth": []
@@ -2343,9 +2232,7 @@
       "delete": {
         "summary": "删除角色",
         "description": "删除指定的角色",
-        "tags": [
-          "Characters"
-        ],
+        "tags": ["Characters"],
         "security": [
           {
             "bearerAuth": []
@@ -2400,9 +2287,7 @@
       "post": {
         "summary": "自动合并重复角色",
         "description": "合并同一用户、同一项目下同名的角色，保留最完整的信息，合并 shotIds。如果未提供 projectId，则合并用户下所有项目的重复角色。",
-        "tags": [
-          "Characters"
-        ],
+        "tags": ["Characters"],
         "security": [
           {
             "bearerAuth": []
@@ -2490,9 +2375,7 @@
       "get": {
         "summary": "获取当前项目下指定小说的所有剧幕（包含场景、镜头等信息）",
         "description": "获取指定小说的所有剧幕，按章节顺序排序，包含场景、镜头等完整信息",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2529,11 +2412,9 @@
     },
     "/api/media/projects/{projectId}/novels/{novelId}/generate-shots": {
       "post": {
-        "summary": "按剧幕依次生成镜头视频",
-        "description": "按剧幕顺序依次生成镜头视频，支持并发",
-        "tags": [
-          "Media"
-        ],
+        "summary": "按剧幕或场景生成镜头视频",
+        "description": "按剧幕或场景生成镜头视频，支持合并模式和场景批次处理。sceneIds 优先于 actIds（如果同时传入，使用 sceneIds）",
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2565,11 +2446,30 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": ["featurePromptId"],
                 "properties": {
+                  "sceneIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "场景ID数组，优先于 actIds（如果同时传入，使用 sceneIds）。当传入 sceneIds 时，每个 sceneId 的所有镜头作为一个批次",
+                    "example": ["scene-uuid-1", "scene-uuid-2"]
+                  },
+                  "actIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "剧幕ID数组，如果 sceneIds 为空则使用此参数。如果为空则生成所有剧幕下的镜头视频",
+                    "example": ["act-uuid-1", "act-uuid-2"]
+                  },
                   "concurrency": {
                     "type": "integer",
                     "default": 3,
-                    "description": "并发数"
+                    "description": "并发数（仅在 actIds 模式生效，sceneIds 模式按场景分组批次）"
                   },
                   "apiConfig": {
                     "type": "object",
@@ -2579,6 +2479,38 @@
                     "type": "boolean",
                     "default": false,
                     "description": "是否允许覆盖已生成的视频"
+                  },
+                  "keepBoth": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否保留旧版本（生成新版本但不删除旧版本）"
+                  },
+                  "storageMode": {
+                    "type": "string",
+                    "enum": ["download_upload", "buffer_upload"],
+                    "default": "download_upload",
+                    "description": "存储方式，download_upload=下载到本地再上传到Catbox，buffer_upload=直接下载Buffer然后上传到Catbox"
+                  },
+                  "featurePromptId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "功能提示词ID（FeaturePrompt表的id），用于获取功能提示词，必填",
+                    "example": "feature-prompt-uuid"
+                  },
+                  "mergeShots": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否合并模式（将多个镜头合并生成一个视频）"
+                  },
+                  "maxDuration": {
+                    "type": "number",
+                    "description": "合并模式最大时长（秒），mergeShots=true 时必填",
+                    "example": 30
+                  },
+                  "toleranceSec": {
+                    "type": "number",
+                    "default": 5,
+                    "description": "合并模式时长容差（秒），实际时长范围是 maxDuration - toleranceSec 到 maxDuration + toleranceSec"
                   }
                 }
               }
@@ -2587,7 +2519,72 @@
         },
         "responses": {
           "201": {
-            "description": "生成任务已启动"
+            "description": "生成任务已启动",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "任务总数（组的数量）"
+                    },
+                    "acts": {
+                      "type": "array",
+                      "description": "按剧幕组织的任务列表",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "actId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "剧幕ID"
+                          },
+                          "actName": {
+                            "type": "string",
+                            "description": "剧幕名称"
+                          },
+                          "order": {
+                            "type": "integer",
+                            "description": "剧幕顺序"
+                          },
+                          "startChapterOrder": {
+                            "type": "integer",
+                            "description": "起始章节顺序"
+                          },
+                          "taskIds": {
+                            "type": "array",
+                            "description": "该剧幕下的镜头生成任务列表",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "taskId": {
+                                  "type": "string",
+                                  "format": "uuid",
+                                  "description": "任务ID"
+                                },
+                                "shotIds": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "description": "该任务关联的镜头ID数组"
+                                },
+                                "shotVideoName": {
+                                  "type": "string",
+                                  "description": "视频名称（用于前端展示）"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2596,9 +2593,7 @@
       "post": {
         "summary": "生成指定单个镜头视频",
         "description": "根据镜头ID数组生成视频，支持并发和覆盖",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2621,9 +2616,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "shotIds"
-                ],
+                "required": ["shotIds"],
                 "properties": {
                   "shotIds": {
                     "type": "array",
@@ -2655,7 +2648,54 @@
         },
         "responses": {
           "201": {
-            "description": "生成任务已启动"
+            "description": "生成任务已启动",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "任务总数（组的数量）"
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "description": "任务列表",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "任务ID"
+                          },
+                          "shotIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "description": "该任务关联的镜头ID数组"
+                          },
+                          "shotVideoName": {
+                            "type": "string",
+                            "description": "视频名称（用于前端展示）"
+                          },
+                          "targetDuration": {
+                            "type": "number",
+                            "description": "目标时长（秒）"
+                          },
+                          "merged": {
+                            "type": "boolean",
+                            "description": "是否为合并模式（仅合并模式时存在）"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2664,9 +2704,7 @@
       "post": {
         "summary": "新增镜头",
         "description": "在指定剧幕中新增镜头，支持向前或向后插入",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2677,9 +2715,7 @@
     "/api/media/projects/{projectId}/shots/{shotId}": {
       "put": {
         "summary": "修改镜头",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2690,9 +2726,7 @@
     "/api/media/projects/{projectId}/shots": {
       "delete": {
         "summary": "删除镜头（支持批量删除）",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2704,9 +2738,7 @@
       "post": {
         "summary": "生成台词音频",
         "description": "批量生成台词音频，支持并发",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2717,9 +2749,7 @@
     "/api/media/projects/{projectId}/dialogues/{dialogueId}": {
       "put": {
         "summary": "修改台词内容",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2728,9 +2758,7 @@
       },
       "delete": {
         "summary": "删除台词内容",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2742,9 +2770,7 @@
       "get": {
         "summary": "预览视频",
         "description": "预览一幕的视频拼接或单个镜头视频",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2756,10 +2782,7 @@
             "name": "type",
             "schema": {
               "type": "string",
-              "enum": [
-                "act",
-                "shot"
-              ]
+              "enum": ["act", "shot"]
             },
             "description": "预览类型"
           },
@@ -2785,9 +2808,7 @@
     "/api/media/projects/{projectId}/preview/video-with-audio": {
       "get": {
         "summary": "预览带台词音频的视频",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2799,9 +2820,7 @@
       "post": {
         "summary": "导出按幕导出视频",
         "description": "导出指定剧幕的视频/音频/视频+音频",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2812,9 +2831,7 @@
     "/api/media/projects/{projectId}/export/single": {
       "post": {
         "summary": "导出单个视频或音频",
-        "tags": [
-          "Media"
-        ],
+        "tags": ["Media"],
         "security": [
           {
             "bearerAuth": []
@@ -2826,9 +2843,7 @@
       "post": {
         "summary": "上传并解析整本小说",
         "description": "上传小说文件（TXT、EPUB、DOC），自动解析元数据和章节，保存到数据库和文件系统",
-        "tags": [
-          "Novels"
-        ],
+        "tags": ["Novels"],
         "security": [
           {
             "bearerAuth": []
@@ -2840,10 +2855,7 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "file",
-                  "projectId"
-                ],
+                "required": ["file", "projectId"],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -2971,9 +2983,7 @@
       "post": {
         "summary": "上传并解析文本粘贴片段",
         "description": "上传文本片段，可以选择扩写后解析或直接解析分割成章节。需要填写书本基本信息和存储方式。",
-        "tags": [
-          "Novels"
-        ],
+        "tags": ["Novels"],
         "security": [
           {
             "bearerAuth": []
@@ -2985,11 +2995,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "text",
-                  "projectId",
-                  "storageLocation"
-                ],
+                "required": ["text", "projectId", "storageLocation"],
                 "properties": {
                   "projectId": {
                     "type": "string",
@@ -3025,10 +3031,7 @@
                   },
                   "storageLocation": {
                     "type": "string",
-                    "enum": [
-                      "local",
-                      "remote"
-                    ],
+                    "enum": ["local", "remote"],
                     "description": "存储位置（必填，local 或 remote）"
                   },
                   "expandText": {
@@ -3135,9 +3138,7 @@
       "get": {
         "summary": "获取当前用户的小说列表",
         "description": "获取当前用户的小说列表，可以通过 projectId 查询参数筛选指定项目的小说",
-        "tags": [
-          "Novels"
-        ],
+        "tags": ["Novels"],
         "security": [
           {
             "bearerAuth": []
@@ -3197,9 +3198,7 @@
       "get": {
         "summary": "获取小说的章节列表",
         "description": "根据小说ID获取该小说的所有章节列表（不包含章节内容）",
-        "tags": [
-          "Novels"
-        ],
+        "tags": ["Novels"],
         "security": [
           {
             "bearerAuth": []
@@ -3283,9 +3282,7 @@
       "get": {
         "summary": "获取小说详情",
         "description": "根据小说ID获取小说详细信息（不包含章节列表，章节列表请使用 /api/novels/{id}/chapters 接口）。如果提供了 chapterId 查询参数，则同时返回该章节的详情（包括章节内容）。",
-        "tags": [
-          "Novels"
-        ],
+        "tags": ["Novels"],
         "security": [
           {
             "bearerAuth": []
@@ -3391,9 +3388,7 @@
       "delete": {
         "summary": "删除整本小说",
         "description": "删除指定的小说及其所有关联数据，包括章节记录和文件系统中的所有文件",
-        "tags": [
-          "Novels"
-        ],
+        "tags": ["Novels"],
         "security": [
           {
             "bearerAuth": []
@@ -3449,9 +3444,7 @@
       "get": {
         "summary": "获取当前用户的所有项目",
         "description": "获取当前登录用户的所有项目列表，支持分页和状态筛选",
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "security": [
           {
             "bearerAuth": []
@@ -3547,9 +3540,7 @@
       "post": {
         "summary": "创建新项目",
         "description": "创建一个新的动画项目，需要配置AI模型和存储位置",
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "security": [
           {
             "bearerAuth": []
@@ -3561,10 +3552,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "title",
-                  "storageLocation"
-                ],
+                "required": ["title", "storageLocation"],
                 "properties": {
                   "title": {
                     "type": "string",
@@ -3624,10 +3612,7 @@
                   },
                   "storageLocation": {
                     "type": "string",
-                    "enum": [
-                      "local",
-                      "remote"
-                    ],
+                    "enum": ["local", "remote"],
                     "description": "存储位置",
                     "example": "local"
                   }
@@ -3676,9 +3661,7 @@
       "get": {
         "summary": "获取项目详情",
         "description": "根据项目ID获取项目详细信息",
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "security": [
           {
             "bearerAuth": []
@@ -3734,9 +3717,7 @@
       "put": {
         "summary": "更新项目",
         "description": "更新项目信息",
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "security": [
           {
             "bearerAuth": []
@@ -3800,10 +3781,7 @@
                   },
                   "storageLocation": {
                     "type": "string",
-                    "enum": [
-                      "local",
-                      "remote"
-                    ]
+                    "enum": ["local", "remote"]
                   }
                 }
               }
@@ -3848,9 +3826,7 @@
       "delete": {
         "summary": "删除项目",
         "description": "删除指定的项目",
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "security": [
           {
             "bearerAuth": []
@@ -3896,9 +3872,7 @@
       "post": {
         "summary": "开始处理项目",
         "description": "开始处理项目的文本内容，生成动画视频",
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "security": [
           {
             "bearerAuth": []
@@ -3956,9 +3930,7 @@
       "get": {
         "summary": "获取项目的所有角色",
         "description": "获取指定项目的所有角色（包括项目专属角色和全局角色）",
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "security": [
           {
             "bearerAuth": []
@@ -4019,9 +3991,7 @@
       "get": {
         "summary": "获取项目的所有小说",
         "description": "获取指定项目的所有小说列表",
-        "tags": [
-          "Projects"
-        ],
+        "tags": ["Projects"],
         "security": [
           {
             "bearerAuth": []
@@ -4082,9 +4052,7 @@
       "get": {
         "summary": "获取场景列表",
         "description": "根据项目ID、小说ID获取场景列表",
-        "tags": [
-          "Scenes"
-        ],
+        "tags": ["Scenes"],
         "security": [
           {
             "bearerAuth": []
@@ -4141,9 +4109,7 @@
       "post": {
         "summary": "新增场景",
         "description": "新增场景，并关联相关镜头（需要同步剧幕的变更）",
-        "tags": [
-          "Scenes"
-        ],
+        "tags": ["Scenes"],
         "security": [
           {
             "bearerAuth": []
@@ -4155,10 +4121,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "actId",
-                  "address"
-                ],
+                "required": ["actId", "address"],
                 "properties": {
                   "actId": {
                     "type": "string",
@@ -4228,9 +4191,7 @@
       "post": {
         "summary": "生成场景图（支持单个或批量）",
         "description": "生成场景图，调用文生图API模型。支持传入单个场景ID或场景ID数组进行批量生成。",
-        "tags": [
-          "Scenes"
-        ],
+        "tags": ["Scenes"],
         "security": [
           {
             "bearerAuth": []
@@ -4242,10 +4203,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "sceneIds",
-                  "projectId"
-                ],
+                "required": ["sceneIds", "projectId"],
                 "properties": {
                   "sceneIds": {
                     "oneOf": [
@@ -4263,10 +4221,7 @@
                         "description": "场景ID数组（批量生成）"
                       }
                     ],
-                    "example": [
-                      "scene-uuid-1",
-                      "scene-uuid-2"
-                    ]
+                    "example": ["scene-uuid-1", "scene-uuid-2"]
                   },
                   "projectId": {
                     "type": "string",
@@ -4391,9 +4346,7 @@
       "put": {
         "summary": "修改场景描述",
         "description": "修改场景描述和其他信息",
-        "tags": [
-          "Scenes"
-        ],
+        "tags": ["Scenes"],
         "security": [
           {
             "bearerAuth": []
@@ -4469,9 +4422,7 @@
       "get": {
         "summary": "查询场景图生成进度",
         "description": "根据场景图的任务ID查询生成进度",
-        "tags": [
-          "Scenes"
-        ],
+        "tags": ["Scenes"],
         "security": [
           {
             "bearerAuth": []
@@ -4571,9 +4522,7 @@
       "post": {
         "summary": "启动剧本生成",
         "description": "根据配置的并发策略，将选中的章节分组并启动剧本生成任务",
-        "tags": [
-          "Scripts"
-        ],
+        "tags": ["Scripts"],
         "security": [
           {
             "bearerAuth": []
@@ -4597,9 +4546,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "projectId"
-                ],
+                "required": ["projectId"],
                 "properties": {
                   "projectId": {
                     "type": "string",
@@ -4616,10 +4563,7 @@
                   },
                   "taskType": {
                     "type": "string",
-                    "enum": [
-                      "by_chapters",
-                      "by_words"
-                    ],
+                    "enum": ["by_chapters", "by_words"],
                     "default": "by_chapters",
                     "description": "任务类型（按章节数或按字数）"
                   },
@@ -4714,9 +4658,7 @@
       "get": {
         "summary": "获取小说的所有剧本生成任务",
         "description": "查询指定小说的所有剧本生成任务及其进度",
-        "tags": [
-          "Scripts"
-        ],
+        "tags": ["Scripts"],
         "security": [
           {
             "bearerAuth": []
@@ -4825,9 +4767,7 @@
       "get": {
         "summary": "获取单个任务详情",
         "description": "查询指定剧本生成任务的详细信息，包括结果",
-        "tags": [
-          "Scripts"
-        ],
+        "tags": ["Scripts"],
         "security": [
           {
             "bearerAuth": []
@@ -4928,9 +4868,7 @@
       "post": {
         "summary": "重新生成剧本数据结构",
         "description": "根据任务ID、项目ID、小说ID重新生成剧本数据结构",
-        "tags": [
-          "Scripts"
-        ],
+        "tags": ["Scripts"],
         "security": [
           {
             "bearerAuth": []
@@ -4953,10 +4891,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "projectId",
-                  "novelId"
-                ],
+                "required": ["projectId", "novelId"],
                 "properties": {
                   "projectId": {
                     "type": "string",
@@ -5035,9 +4970,7 @@
       "get": {
         "summary": "获取小说的所有剧幕（按章节顺序排序）",
         "description": "获取指定小说的所有剧幕，按照章节顺序排序，确保即使异步处理也不会打乱顺序",
-        "tags": [
-          "Scripts"
-        ],
+        "tags": ["Scripts"],
         "security": [
           {
             "bearerAuth": []
@@ -5090,9 +5023,7 @@
       "post": {
         "summary": "创建系统提示词",
         "description": "创建新的系统提示词，用于配置AI功能",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5104,11 +5035,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "functionKey",
-                  "prompt"
-                ],
+                "required": ["name", "functionKey", "prompt"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -5156,9 +5083,7 @@
       "get": {
         "summary": "获取所有系统提示词",
         "description": "获取所有系统提示词列表，支持按分类和状态筛选",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5192,9 +5117,7 @@
     "/api/system-prompts/{id}": {
       "get": {
         "summary": "根据ID获取系统提示词",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5222,9 +5145,7 @@
       },
       "put": {
         "summary": "更新系统提示词",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5285,9 +5206,7 @@
       },
       "delete": {
         "summary": "删除系统提示词",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5317,9 +5236,7 @@
     "/api/system-prompts/function/{functionKey}": {
       "get": {
         "summary": "根据功能标识获取系统提示词",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5348,9 +5265,7 @@
     "/api/system-prompts/category/{category}": {
       "get": {
         "summary": "根据分类获取系统提示词",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5376,9 +5291,7 @@
     "/api/system-prompts/{systemPromptId}/feature-prompts": {
       "post": {
         "summary": "创建功能提示词",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5402,11 +5315,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "functionType",
-                  "prompt"
-                ],
+                "required": ["name", "functionType", "prompt"],
                 "properties": {
                   "name": {
                     "type": "string"
@@ -5441,9 +5350,8 @@
       },
       "get": {
         "summary": "获取功能提示词列表",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "description": "支持通过 systemPromptId（路径参数，UUID格式）或 functionKey（查询参数）查询。当 systemPromptId 是有效的 UUID 时，优先使用 systemPromptId；如果 systemPromptId 不是有效的 UUID，则使用 functionKey 查询参数",
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5455,9 +5363,19 @@
             "name": "systemPromptId",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
+              "type": "string"
+            },
+            "description": "系统提示词ID（UUID格式）。如果不是有效的 UUID，则必须提供 functionKey 查询参数",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          {
+            "in": "query",
+            "name": "functionKey",
+            "schema": {
+              "type": "string"
+            },
+            "description": "系统提示词的功能标识（如：shot_video_generation, character_image_generation, scene_image_generation, script_generation, text_expansion等）。当 systemPromptId 不是有效的 UUID 时必填",
+            "example": "shot_video_generation"
           },
           {
             "in": "query",
@@ -5471,6 +5389,49 @@
         "responses": {
           "200": {
             "description": "成功"
+          },
+          "400": {
+            "description": "参数错误（systemPromptId 不是有效的 UUID 且缺少 functionKey）"
+          }
+        }
+      }
+    },
+    "/api/system-prompts/feature-prompts": {
+      "get": {
+        "summary": "获取功能提示词列表（通过 functionKey）",
+        "description": "通过 functionKey 查询功能提示词列表，不需要提供 systemPromptId",
+        "tags": ["SystemPrompts"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "functionKey",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "系统提示词的功能标识（如：shot_video_generation, character_image_generation, scene_image_generation, script_generation, text_expansion等），必填",
+            "example": "shot_video_generation"
+          },
+          {
+            "in": "query",
+            "name": "functionType",
+            "schema": {
+              "type": "string"
+            },
+            "description": "按功能类型筛选"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "400": {
+            "description": "参数错误（缺少 functionKey）"
           }
         }
       }
@@ -5478,9 +5439,7 @@
     "/api/system-prompts/feature-prompts/{id}": {
       "get": {
         "summary": "获取单个功能提示词",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5505,9 +5464,7 @@
       },
       "put": {
         "summary": "更新功能提示词",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5563,9 +5520,7 @@
       },
       "delete": {
         "summary": "删除功能提示词",
-        "tags": [
-          "SystemPrompts"
-        ],
+        "tags": ["SystemPrompts"],
         "security": [
           {
             "bearerAuth": []
@@ -5585,6 +5540,113 @@
         "responses": {
           "200": {
             "description": "删除成功"
+          }
+        }
+      }
+    },
+    "/api/materials/read-file-info": {
+      "post": {
+        "summary": "读取本地文件信息",
+        "description": "根据本地文件路径快速读取文件信息（视频、音频、图片、文档），返回文件元数据和可访问的URL",
+        "tags": ["Materials"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["filePath"],
+                "properties": {
+                  "filePath": {
+                    "type": "string",
+                    "description": "本地文件路径（绝对路径或相对路径）",
+                    "example": "/Users/liuqihui/lqh/mycode/StoryX/BackEnd/uploads/characters/merged_u89012qr-4567-7wxy-0qrs-789012345678_1766575906733/video_1766575906735.mp4"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功返回文件信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "filePath": {
+                          "type": "string",
+                          "description": "文件的绝对路径"
+                        },
+                        "fileName": {
+                          "type": "string",
+                          "description": "文件名"
+                        },
+                        "fileExtension": {
+                          "type": "string",
+                          "description": "文件扩展名"
+                        },
+                        "fileType": {
+                          "type": "string",
+                          "enum": [
+                            "video",
+                            "audio",
+                            "image",
+                            "document",
+                            "other"
+                          ],
+                          "description": "文件类型"
+                        },
+                        "mimeType": {
+                          "type": "string",
+                          "description": "MIME类型"
+                        },
+                        "size": {
+                          "type": "integer",
+                          "description": "文件大小（字节）"
+                        },
+                        "sizeFormatted": {
+                          "type": "string",
+                          "description": "格式化后的文件大小"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "文件创建时间"
+                        },
+                        "modifiedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "文件修改时间"
+                        },
+                        "accessUrl": {
+                          "type": "string",
+                          "description": "可访问的URL（用于前端播放/显示）"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数错误或路径不是文件"
+          },
+          "404": {
+            "description": "文件不存在"
           }
         }
       }

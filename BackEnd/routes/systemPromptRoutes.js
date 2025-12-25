@@ -104,6 +104,36 @@ router.get('/', systemPromptController.getAllSystemPrompts);
 
 /**
  * @swagger
+ * /api/system-prompts/feature-prompts:
+ *   get:
+ *     summary: 获取功能提示词列表（通过 functionKey）
+ *     description: 通过 functionKey 查询功能提示词列表，不需要提供 systemPromptId
+ *     tags: [SystemPrompts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: functionKey
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 系统提示词的功能标识（如：shot_video_generation, character_image_generation, scene_image_generation, script_generation, text_expansion等），必填
+ *         example: shot_video_generation
+ *       - in: query
+ *         name: functionType
+ *         schema:
+ *           type: string
+ *         description: 按功能类型筛选
+ *     responses:
+ *       200:
+ *         description: 成功
+ *       400:
+ *         description: 参数错误（缺少 functionKey）
+ */
+router.get('/feature-prompts', systemPromptController.getFeaturePromptsByFunctionKey);
+
+/**
+ * @swagger
  * /api/system-prompts/{id}:
  *   get:
  *     summary: 根据ID获取系统提示词
@@ -315,6 +345,7 @@ router.post(
  * /api/system-prompts/{systemPromptId}/feature-prompts:
  *   get:
  *     summary: 获取功能提示词列表
+ *     description: 支持通过 systemPromptId（路径参数，UUID格式）或 functionKey（查询参数）查询。当 systemPromptId 是有效的 UUID 时，优先使用 systemPromptId；如果 systemPromptId 不是有效的 UUID，则使用 functionKey 查询参数
  *     tags: [SystemPrompts]
  *     security:
  *       - bearerAuth: []
@@ -324,7 +355,14 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *           format: uuid
+ *         description: 系统提示词ID（UUID格式）。如果不是有效的 UUID，则必须提供 functionKey 查询参数
+ *         example: "123e4567-e89b-12d3-a456-426614174000"
+ *       - in: query
+ *         name: functionKey
+ *         schema:
+ *           type: string
+ *         description: 系统提示词的功能标识（如：shot_video_generation, character_image_generation, character_image_generation, scene_image_generation, script_generation, text_expansion等）。当 systemPromptId 不是有效的 UUID 时必填
+ *         example: shot_video_generation
  *       - in: query
  *         name: functionType
  *         schema:
@@ -333,6 +371,8 @@ router.post(
  *     responses:
  *       200:
  *         description: 成功
+ *       400:
+ *         description: 参数错误（systemPromptId 不是有效的 UUID 且缺少 functionKey）
  */
 router.get('/:systemPromptId/feature-prompts', systemPromptController.getFeaturePrompts);
 
